@@ -1,0 +1,5 @@
+{
+  "C_Cpp.intelliSenseEngine": "Tag Parser",
+  "nrf-connect.toolchain.path": "${nrf-connect.toolchain:2.0.0}",
+  "idf.portWin": "COM5"
+}
