@@ -1,1 +1,6 @@
-*bleprph/build
+*.o
+*.d
+*.a
+*.elf
+*.map
+build/
