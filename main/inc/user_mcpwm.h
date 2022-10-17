@@ -26,8 +26,8 @@
 #define TIMER0_OUTPUT_GPIO GPIO_NUM_16
 #define TIMER1_OUTPUT_GPIO GPIO_NUM_17
 
-void pwm_carrier_setup(void);
-void pwm_carrier_start(void);
-void pwm_carrier_stop(void);
+void pwm_carrier_wave_setup(void);
+void pwm_carrier_wave_start(void);
+void pwm_carrier_wave_stop(void);
 
 #endif /* INC_USER_MCPWM_H_ */

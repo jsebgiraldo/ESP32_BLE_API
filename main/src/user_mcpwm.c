@@ -12,7 +12,7 @@ static const char TAG[] = "[MCPWM]";
 #endif
 
 
-void pwm_carrier_setup(void) {
+void pwm_carrier_wave_setup(void) {
 
     MCPWM_DEBUG("%s",__func__);
 
@@ -43,13 +43,13 @@ void pwm_carrier_setup(void) {
     ESP_ERROR_CHECK(mcpwm_gpio_init(TARGET_MCPWM_UNIT, MCPWM0A, TIMER0_OUTPUT_GPIO));
     ESP_ERROR_CHECK(mcpwm_gpio_init(TARGET_MCPWM_UNIT, MCPWM1A, TIMER1_OUTPUT_GPIO));
 
-    pwm_carrier_stop();
+    pwm_carrier_wave_stop();
 
     
 }
 
 
-void pwm_carrier_start(void)
+void pwm_carrier_wave_start(void)
 {
     MCPWM_DEBUG("%s",__func__);
 
@@ -57,7 +57,7 @@ void pwm_carrier_start(void)
     ESP_ERROR_CHECK(mcpwm_start(TARGET_MCPWM_UNIT, MCPWM_TIMER_1));
 }
 
-void pwm_carrier_stop(void)
+void pwm_carrier_wave_stop(void)
 {
     MCPWM_DEBUG("%s",__func__);
 

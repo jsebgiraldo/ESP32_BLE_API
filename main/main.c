@@ -7,8 +7,12 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 
 #include "user_mcpwm.h"
+#include "user_dac.h"
+
+
 
 static const char TAG[] = "[MAIN]";
 
@@ -37,11 +41,22 @@ void app_main(void)
 
 	MAIN_DEBUG("HEAP MEMORY: %d",esp_get_free_heap_size());
 	nvs_flash_setup(); 
-	pwm_carrier_setup();
 
+	pwm_carrier_wave_setup();
+	dac_modulation_wave_setup();
 
-	//Only debug
-	pwm_carrier_start();
+	//************** Only debug *******************//
+	pwm_carrier_wave_start();
 
+	modulation_wave_config_t wave_config = 
+	{
+		.T1 = 60,
+		.T2 = 150,
+		.T3 = 200
+	};
+	dac_modulation_wave_configure(&wave_config);
+	dac_modulation_wave_start();
+	//***********************************************//
+	
 }
 
