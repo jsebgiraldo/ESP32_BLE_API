@@ -8,12 +8,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "user_mcpwm.h"
 
-static const char TAG[] = "[main]";
+static const char TAG[] = "[MAIN]";
 
 #define MAIN_DEBUG_ENABLE
 #ifdef MAIN_DEBUG_ENABLE
-	#define MAIN_DEBUG(...) ESP_LOGI(TAG,LOG_COLOR(LOG_COLOR_CYAN) __VA_ARGS__)
+	#define MAIN_DEBUG(...) ESP_LOGI(TAG,LOG_COLOR(LOG_COLOR_BROWN) __VA_ARGS__)
 #else
 	#define MAIN_DEBUG(...)
 #endif
@@ -34,9 +35,13 @@ void nvs_flash_setup(void)
 void app_main(void)
 {
 
-	MAIN_DEBUG("HEAP MEMORY: %d\n",esp_get_free_heap_size());
-
+	MAIN_DEBUG("HEAP MEMORY: %d",esp_get_free_heap_size());
 	nvs_flash_setup(); 
+	pwm_carrier_setup();
+
+
+	//Only debug
+	pwm_carrier_start();
 
 }
 
