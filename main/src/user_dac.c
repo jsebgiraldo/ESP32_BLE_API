@@ -261,7 +261,11 @@ void dac_modulation_wave_configure(modulation_wave_config_t *configuration)
 
 void dac_modulation_wave_start(void)
 {
-    dac_app_send_message(DAC_APP_MSG_START_OPERATION);
+    if(modulation_wave_queue_handle != NULL)
+    {
+        dac_app_send_message(DAC_APP_MSG_START_OPERATION);
+    }
+    
 }
     
 

@@ -54,7 +54,7 @@ void app_main(void)
 	pwm_carrier_wave_configure(&pwm_config);
 	pwm_carrier_wave_start();
 
-
+	
 	modulation_wave_config_t wave_config = 
 	{
 		.T1 = 60,
@@ -63,7 +63,9 @@ void app_main(void)
 	};
 	dac_modulation_wave_configure(&wave_config);
 	dac_modulation_wave_setup();
-	dac_modulation_wave_start();
+	vTaskDelay(1000);
+    dac_modulation_wave_start();
+	
 	//***********************************************//
 	
 }
