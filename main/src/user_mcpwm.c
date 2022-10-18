@@ -1,6 +1,6 @@
 
 #include "user_mcpwm.h"
-
+#include "string.h"
 
 static const char TAG[] = "[MCPWM]";
 
@@ -11,19 +11,13 @@ static const char TAG[] = "[MCPWM]";
 	#define MCPWM_DEBUG(...)
 #endif
 
+ mcpwm_config_t pwm_config;
 
-void pwm_carrier_wave_setup(void) {
+
+void pwm_carrier_wave_start(void) {
 
     MCPWM_DEBUG("%s",__func__);
 
-    // init MCPWM: 10% duty cycle on all three timers in MCPWM unit 0 (currently not synchronous)
-    mcpwm_config_t pwm_config = {
-        .frequency = 10*1000,
-        .cmpr_a = 50,
-        .cmpr_b = 50,
-        .counter_mode = MCPWM_UP_COUNTER,
-        .duty_mode = MCPWM_DUTY_MODE_0,
-    };
     ESP_ERROR_CHECK(mcpwm_init(TARGET_MCPWM_UNIT, MCPWM_TIMER_0, &pwm_config));
     ESP_ERROR_CHECK(mcpwm_init(TARGET_MCPWM_UNIT, MCPWM_TIMER_1, &pwm_config));
 
@@ -43,18 +37,15 @@ void pwm_carrier_wave_setup(void) {
     ESP_ERROR_CHECK(mcpwm_gpio_init(TARGET_MCPWM_UNIT, MCPWM0A, TIMER0_OUTPUT_GPIO));
     ESP_ERROR_CHECK(mcpwm_gpio_init(TARGET_MCPWM_UNIT, MCPWM1A, TIMER1_OUTPUT_GPIO));
 
-    pwm_carrier_wave_stop();
+    ESP_ERROR_CHECK(mcpwm_start(TARGET_MCPWM_UNIT, MCPWM_TIMER_0));
+    ESP_ERROR_CHECK(mcpwm_start(TARGET_MCPWM_UNIT, MCPWM_TIMER_1));
 
     
 }
 
-
-void pwm_carrier_wave_start(void)
+void pwm_carrier_wave_configure(mcpwm_config_t *config)
 {
-    MCPWM_DEBUG("%s",__func__);
-
-    ESP_ERROR_CHECK(mcpwm_start(TARGET_MCPWM_UNIT, MCPWM_TIMER_0));
-    ESP_ERROR_CHECK(mcpwm_start(TARGET_MCPWM_UNIT, MCPWM_TIMER_1));
+    memcpy(&pwm_config,config,sizeof(mcpwm_config_t));
 }
 
 void pwm_carrier_wave_stop(void)
