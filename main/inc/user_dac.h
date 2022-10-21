@@ -48,6 +48,7 @@ typedef struct dac_app_queue_message
 
 void dac_modulation_wave_setup(void);
 void dac_modulation_wave_start(void);
+void dac_modulation_wave_stop(void);
 void dac_modulation_wave_configure(modulation_wave_config_t *configuration);
 
 BaseType_t dac_app_send_message(dac_app_message_e msgID);

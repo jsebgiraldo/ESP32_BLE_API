@@ -12,7 +12,7 @@
 #include "user_mcpwm.h"
 #include "user_dac.h"
 
-
+#include "wifi_app.h"
 
 static const char TAG[] = "[MAIN]";
 
@@ -42,29 +42,10 @@ void app_main(void)
 	MAIN_DEBUG("HEAP MEMORY: %d",esp_get_free_heap_size());
 	nvs_flash_setup(); 
 
-	//************** Only debug *******************//
-	mcpwm_config_t pwm_config = {
-		.frequency = 10*1000,
-		.cmpr_a = 50,
-		.cmpr_b = 50,
-		.counter_mode = MCPWM_UP_COUNTER,
-		.duty_mode = MCPWM_DUTY_MODE_0,
-	};
+	wifi_app_start();
 
-	pwm_carrier_wave_configure(&pwm_config);
-	pwm_carrier_wave_start();
-
-	
-	modulation_wave_config_t wave_config = 
-	{
-		.T1 = 60,
-		.T2 = 150,
-		.T3 = 200,
-	};
-	dac_modulation_wave_configure(&wave_config);
 	dac_modulation_wave_setup();
-	vTaskDelay(1000);
-    dac_modulation_wave_start();
+
 	
 	//***********************************************//
 	

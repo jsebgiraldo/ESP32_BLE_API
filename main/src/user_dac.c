@@ -177,11 +177,10 @@ void dac_wave(void *pvParameters)
                 case DAC_APP_MSG_START_OPERATION:
                     DAC_DEBUG("DAC_APP_MSG_START_OPERATION!");
                     dac_current_state = DAC_APP_MSG_START_OPERATION;
-        
-                    modulation_wave.T1/=15;
-                    if(modulation_wave.T1 >= 1)
+                    output_dac = 0;
+                    if(modulation_wave.T1/15 >= 1)
                     {
-                        xTimerChangePeriod(dac_tmr_t1,pdMS_TO_TICKS(modulation_wave.T1),100);
+                        xTimerChangePeriod(dac_tmr_t1,pdMS_TO_TICKS(modulation_wave.T1/15),100);
                         dac_start_t1();
                         dac_app_send_message(DAC_APP_MSG_RISING_STATE);
                     }
@@ -191,6 +190,10 @@ void dac_wave(void *pvParameters)
                 case DAC_APP_MSG_STOP_OPERATION:
                     DAC_DEBUG("DAC_APP_MSG_STOP_OPERATION!");
                     dac_current_state = DAC_APP_MSG_STOP_OPERATION;
+                    dac_stop_t1();
+                    dac_stop_t2();
+                    dac_stop_t3();
+                    dac_output_voltage(DAC_CHANNEL_1, 0);
                     break;
 
                 case DAC_APP_MSG_RISING_STATE:
@@ -261,9 +264,21 @@ void dac_modulation_wave_configure(modulation_wave_config_t *configuration)
 
 void dac_modulation_wave_start(void)
 {
+    DAC_DEBUG("%s",__FUNCTION__);
     if(modulation_wave_queue_handle != NULL)
     {
+        DAC_DEBUG("T1: %d , T2: %d, T3: %d",modulation_wave.T1,modulation_wave.T2,modulation_wave.T3);
         dac_app_send_message(DAC_APP_MSG_START_OPERATION);
+    }
+    
+}
+
+void dac_modulation_wave_stop(void)
+{
+    DAC_DEBUG("%s",__FUNCTION__);
+    if(modulation_wave_queue_handle != NULL)
+    {
+        dac_app_send_message(DAC_APP_MSG_STOP_OPERATION);
     }
     
 }

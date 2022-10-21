@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>ESP Admin</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="app.css">
+    <script src='jquery-3.3.1.min.js'></script>
+    <script async src="app.js"></script>
+</head>
+
+<body>
+    <!-- STYLE THE TOP NAVIGATION BAR -->
+
+    <hr>
+
+    <div class="card">
+
+        <div id="OTA">
+            <h2>Firmware Update</h2>
+            <hr>
+            <label id="latest_firmware_label">Latest Firmware: </label>
+            <div id="latest_firmware"></div>
+            <br>
+            <input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
+            <div class="buttons">
+                <button onclick="document.getElementById('selected_file').click();"><span class="button_top" name="door_button">Select File</span></button>
+                <button onclick="updateFirmware()"><span class="button_top" name="door_button">Update Firmware</span></button>
+            </div>
+            <h4 id="file_info"></h4>
+            <h4 id="ota_update_status"></h4>
+        </div>
+
+    </div>
+
+    <div>
+        <div class="card">
+            <h2>Treatment</h2>
+            <hr>
+            <div style="justify-content: space-around;align-items:center;display: flex;">
+                <button onclick="start_button()"> Start</button>
+                <button onclick="stop_button()"> Stop</button>
+            </div>
+
+        </div>
+        <div class="card">
+            <h2>Config waves</h2>
+            <hr>
+            <h3>Carrier wave</h3>
+            <form id="form_carrier">
+                <label for="frequency">Frequency</label>
+                <input type="number" name="frequency" id="frequency" value="10000" />
+                <br><br>
+                <label for="duty_a">Duty a</label>
+                <input type="range" name="duty_a" id="duty_a" value="50" />
+                <br><br>
+                <label for="duty_b">Duty b</label>
+                <input type="range" name="duty_b" id="duty_b" value="50" />
+                <br><br>
+
+                <button type="submit" id="config_carrier">Config</button>
+            </form>
+            <hr>
+            <h3>Modulation wave</h3>
+            <form id="form_modulation">
+                <label for="t1">T1</label>
+                <input type="number" name="t1" id="t1" value="60" />
+                <br><br>
+                <label for="t2">T2</label>
+                <input type="number" name="t2" id="t2" value="150" />
+                <br><br>
+                <label for="t3">T3</label>
+                <input type="number" name="t3" id="t3" value="200" />
+                <br><br>
+
+                <button type="submit">Config</button>
+            </form>
+        </div>
+    </div>
+
+
+
+
+</body>
+
+</html>
