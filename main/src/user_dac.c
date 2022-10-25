@@ -20,6 +20,8 @@ static const char TAG[] = "[DAC]";
 	#define DAC_DEBUG(...)
 #endif
 
+#define DAC_CHAN    DAC_CHANNEL_2
+
 
 // Queue handle used to manipulate the main queue of events
 static QueueHandle_t modulation_wave_queue_handle;
@@ -123,7 +125,7 @@ void dac_callback_timeout( TimerHandle_t xTimer )
                 dac_stop_t1();
             }
             
-            dac_output_voltage(DAC_CHANNEL_1, output_dac);
+            dac_output_voltage(DAC_CHAN, output_dac);
             return;
         }
 
@@ -136,7 +138,7 @@ void dac_callback_timeout( TimerHandle_t xTimer )
                 dac_stop_t1();
             }
 
-            dac_output_voltage(DAC_CHANNEL_1, output_dac);
+            dac_output_voltage(DAC_CHAN, output_dac);
             return;
         }
   }
@@ -193,7 +195,7 @@ void dac_wave(void *pvParameters)
                     dac_stop_t1();
                     dac_stop_t2();
                     dac_stop_t3();
-                    dac_output_voltage(DAC_CHANNEL_1, 0);
+                    dac_output_voltage(DAC_CHAN, 0);
                     break;
 
                 case DAC_APP_MSG_RISING_STATE:
@@ -251,8 +253,8 @@ BaseType_t dac_app_send_message(dac_app_message_e msgID)
 
 void dac_modulation_wave_setup(void)
 {
-    dac_output_enable(DAC_CHANNEL_1);
-	dac_output_voltage(DAC_CHANNEL_1, 0);
+    dac_output_enable(DAC_CHAN);
+	dac_output_voltage(DAC_CHAN, 0);
 
     xTaskCreate( dac_wave, "dac_wave", 2*1024, NULL, 5, NULL); // Task main queue
 }
