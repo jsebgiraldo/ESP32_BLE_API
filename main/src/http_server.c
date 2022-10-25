@@ -389,6 +389,10 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 	dac_modulation_wave_start();
 	pwm_carrier_wave_start();
 
+	char req_start[50];
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, req_start, strlen(req_start));
+
 	return ESP_OK;
 }
 
@@ -397,6 +401,10 @@ static esp_err_t http_stop_treatment(httpd_req_t *req)
 	HTTP_DEBUG("stop.json requested");
 	pwm_carrier_wave_stop();
 	dac_modulation_wave_stop();
+
+	char req_stop[50];
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, req_stop, strlen(req_stop));
 	return ESP_OK;
 }
 
@@ -446,6 +454,10 @@ static esp_err_t http_carrier_wave(httpd_req_t *req)
 	HTTP_DEBUG("Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
 	pwm_carrier_wave_configure(&pwm_config);
 
+	char req_carrier[50];
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, req_carrier, strlen(req_carrier));
+
 	return ESP_OK;
 }
 
@@ -490,6 +502,10 @@ static esp_err_t http_modulation_wave(httpd_req_t *req)
 
 	HTTP_DEBUG("T1: %d , T2: %d, T3: %d",wave_config.T1,wave_config.T2,wave_config.T3);
 	dac_modulation_wave_configure(&wave_config);
+
+	char req_modulation[50];
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, req_modulation, strlen(req_modulation));
 	return ESP_OK;
 }
 

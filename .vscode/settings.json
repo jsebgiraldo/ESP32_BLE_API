@@ -1,8 +1,9 @@
 {
-    "idf.portWin": "COM11",
+    "idf.portWin": "COM5",
     "idf.adapterTargetName": "esp32",
     "files.associations": {
         "user_dac.h": "c",
         "user_mcpwm.h": "c"
-    }
+    },
+    "nrf-connect.toolchain.path": "${nrf-connect.toolchain:2.0.0}"
 }
