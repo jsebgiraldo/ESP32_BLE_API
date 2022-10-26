@@ -89,14 +89,33 @@ function otaRebootTimer() {
  */
 function start_button() {
 
+    /*
     $.ajax({
         url: '/start.json',
         dataType: 'json',
         method: 'GET',
         cache: false
     });
+*/
+    let frequency = document.getElementById('frequency').value;
+    let ppw = document.getElementById('ppw').value;
+    let npw = document.getElementById('npw').value;
+
+    let T1 = document.getElementById('t1').value;
+    let T2 = document.getElementById('t2').value;
+    let T3 = document.getElementById('t3').value;
+
+    let intensity = document.getElementById('intensity').value;
+
+    let time_treatment = document.getElementById('time_treatment').value;
 
 
+    let json_send = '{ "carrier" : [ { "Frequency" : ' + frequency + '} , { "ppw" : ' + ppw + '} , { "npw" : ' + npw + '}],' +
+        ' "modulation" : [ { "t1" : ' + T1 + '} , { "t2" : ' + T2 + '} , { "t3" : ' + T3 + '} ] ' +
+        ',  "intensity" : ' + intensity + ' ,  "time_treatment" : ' + time_treatment + '}'
+
+    const obj = JSON.parse(json_send);
+    console.log(obj);
 }
 
 function stop_button() {
@@ -143,7 +162,7 @@ function handlecarrier(event) {
         dataType: 'json',
         method: 'POST',
         cache: false,
-        headers: { 'frequency': value['frequency'], 'duty_a': value['duty_a'], 'duty_b': value['duty_b'] }
+        headers: { 'frequency': value['frequency'], 'ppw': value['ppw'], 'npw': value['npw'] }
     });
 }
 
@@ -153,3 +172,16 @@ form_carrier.addEventListener('submit', handlecarrier);
 
 const form = document.querySelector('#form_modulation');
 form.addEventListener('submit', handlemodulation);
+
+
+function updateTextInput_ppw(val) {
+    document.getElementById('value_ppw').innerHTML = '<b>' + val + '%' + '</b>';
+}
+
+function updateTextInput_npw(val) {
+    document.getElementById('value_npw').innerHTML = '<b>' + val + '%' + '</b>';
+}
+
+function updateIntensityRange(val) {
+    document.getElementById('intensity_value').innerHTML = '<b>' + val + '%' + '</b>';
+}

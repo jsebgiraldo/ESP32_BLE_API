@@ -20,13 +20,13 @@
         <div id="OTA">
             <h2>Firmware Update</h2>
             <hr>
-            <label id="latest_firmware_label">Latest Firmware: </label>
+            <label id="latest_firmware_label"><b>Latest Firmware: </b></label>
             <div id="latest_firmware"></div>
             <br>
             <input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
             <div class="buttons">
-                <button onclick="document.getElementById('selected_file').click();"><span class="button_top" name="door_button">Select File</span></button>
-                <button onclick="updateFirmware()"><span class="button_top" name="door_button">Update Firmware</span></button>
+                <button onclick="document.getElementById('selected_file').click();" class="button"><span class="button_top" name="door_button">Select File</span></button>
+                <button onclick="updateFirmware()" class="button"><span class="button_top" name="door_button" >Update Firmware</span></button>
             </div>
             <h4 id="file_info"></h4>
             <h4 id="ota_update_status"></h4>
@@ -34,52 +34,76 @@
 
     </div>
 
-    <div>
-        <div class="card">
-            <h2>Treatment</h2>
-            <hr>
-            <div style="justify-content: space-around;align-items:center;display: flex;">
-                <button onclick="start_button()"> Start</button>
-                <button onclick="stop_button()"> Stop</button>
-            </div>
 
-        </div>
-        <div class="card">
-            <h2>Config waves</h2>
-            <hr>
-            <h3>Carrier wave</h3>
-            <form id="form_carrier">
-                <label for="frequency">Frequency</label>
-                <input type="number" name="frequency" id="frequency" value="10000" />
-                <br><br>
-                <label for="duty_a">PPW</label>
-                <input type="range" name="duty_a" id="duty_a" value="50" max="50" />
-                <br><br>
-                <label for="duty_b">NPW</label>
-                <input type="range" name="duty_b" id="duty_b" value="50" max="50" />
-                <br><br>
+    <div class="card">
+        <h3 style="display: flex;justify-content: center; color: rgba(104,104,104,255);">Carrier Wave (internal)</h3>
+        <hr>
 
-                <button type="submit" id="config_carrier">Config</button>
-            </form>
-            <hr>
-            <h3>Modulation wave</h3>
-            <form id="form_modulation">
-                <label for="t1">T1</label>
-                <input type="number" name="t1" id="t1" value="60" />
-                <br><br>
-                <label for="t2">T2</label>
-                <input type="number" name="t2" id="t2" value="150" />
-                <br><br>
-                <label for="t3">T3</label>
-                <input type="number" name="t3" id="t3" value="200" />
-                <br><br>
-
-                <button type="submit">Config</button>
-            </form>
-        </div>
+        <label for="frequency"><b>Frequency</b></label>
+        <br>
+        <input type="number" name="frequency" id="frequency" value="10000" class="input_form" />
+        <span style="margin: 10px;"><b>Hz</b></span>
+        <br><br>
+        <label for="ppw"><b>PPW</b></label>
+        <span id="value_ppw"><b>50%</b></span>
+        <br>
+        <input type="range" name="ppw" id="ppw" value="50" max="50" oninput="updateTextInput_ppw(this.value);" class="slider-color" />
+        <br><br>
+        <label for="npw"><b>NPW</b></label>
+        <span id="value_npw"><b>50%</b></span>
+        <br>
+        <input type="range" name="npw" id="npw" value="50" max="50" oninput="updateTextInput_npw(this.value);" class="slider-color" />
+        <br><br>
     </div>
 
 
+    <div class="card">
+        <h3 style="display: flex;justify-content: center; color: rgba(104,104,104,255);">Intensity Modulation - Sec</h3>
+        <hr>
+
+        <div style="display: flex;justify-content: space-around;">
+            <div>
+                <label for="t1"><b>T1</b></label>
+                <br>
+                <input type="number" name="t1" id="t1" value="60" class="input_form" />
+            </div>
+
+
+            <div>
+                <label for="t2"><b>T2</b></label>
+                <br>
+                <input type="number" name="t2" id="t2" value="150" class="input_form" />
+            </div>
+
+
+            <div>
+                <label for="t3"><b>T3</b></label>
+                <br>
+                <input type="number" name="t3" id="t3" value="200" class="input_form" />
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card">
+        <h4>Max Intensity <span id="intensity_value"><b>50%</b></span></h4>
+        <input type="range" value="50" max="100" class="slider-color" id="intensity" oninput="updateIntensityRange(this.value)">
+    </div>
+
+    <div class="card">
+        <h3 style="display: flex;justify-content: center; color: rgba(104,104,104,255);">Treatment</h3>
+        <hr>
+        <div>
+            <label for="time_treatment" style="margin: 10px;"><b>Time Treatment - Min:</b></label>
+            <input type="number" name="time_treatment" value="2" id="time_treatment" class="input_form" />
+        </div>
+        <br>
+        <div style="justify-content: space-around;align-items:center;display: flex;">
+            <button onclick="start_button()" class="button"> Start</button>
+            <button onclick="stop_button()" class="button"> Stop</button>
+        </div>
+
+    </div>
 
 
 </body>
