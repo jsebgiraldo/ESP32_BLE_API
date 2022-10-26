@@ -485,6 +485,7 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 
 	HTTP_DEBUG("Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
 	pwm_carrier_wave_configure(&pwm_config);
+	pwm_carrier_wave_start();
 
 	timer_treatmnet_start();
 
