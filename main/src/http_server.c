@@ -386,8 +386,93 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 {
 	HTTP_DEBUG("start.json requested");
 
-	dac_modulation_wave_start();
-	pwm_carrier_wave_start();
+	//dac_modulation_wave_start();
+	//pwm_carrier_wave_start();
+
+	size_t len_json = 0;
+	char *json_str = NULL;
+
+	len_json = httpd_req_get_hdr_value_len(req, "frequency") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "frequency", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%s",json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "ppw") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "ppw", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%s",json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "npw") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "npw", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%s",json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "T1") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "T1", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%s",json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "T2") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "T2", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%s",json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "T3") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "T3", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%s",json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "intensity") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "intensity", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%d",atoi(json_str));
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "time_treatment") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "time_treatment", json_str, len_json) == ESP_OK)
+		{
+			HTTP_DEBUG("%d",atoi(json_str));
+
+		}
+	}
+	free(json_str);
 
 	char req_start[50];
 	httpd_resp_set_type(req, "application/json");
@@ -644,7 +729,7 @@ static httpd_handle_t http_server_configure(void)
 		// register OpenDoor.json handler
 		httpd_uri_t start_treatment_json = {
 				.uri = "/start.json",
-				.method = HTTP_GET,
+				.method = HTTP_POST,
 				.handler = http_start_treatment,
 				.user_ctx = NULL
 		};

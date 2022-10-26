@@ -89,14 +89,6 @@ function otaRebootTimer() {
  */
 function start_button() {
 
-    /*
-    $.ajax({
-        url: '/start.json',
-        dataType: 'json',
-        method: 'GET',
-        cache: false
-    });
-*/
     let frequency = document.getElementById('frequency').value;
     let ppw = document.getElementById('ppw').value;
     let npw = document.getElementById('npw').value;
@@ -109,13 +101,13 @@ function start_button() {
 
     let time_treatment = document.getElementById('time_treatment').value;
 
-
-    let json_send = '{ "carrier" : [ { "Frequency" : ' + frequency + '} , { "ppw" : ' + ppw + '} , { "npw" : ' + npw + '}],' +
-        ' "modulation" : [ { "t1" : ' + T1 + '} , { "t2" : ' + T2 + '} , { "t3" : ' + T3 + '} ] ' +
-        ',  "intensity" : ' + intensity + ' ,  "time_treatment" : ' + time_treatment + '}'
-
-    const obj = JSON.parse(json_send);
-    console.log(obj);
+    $.ajax({
+        url: '/start.json',
+        dataType: 'json',
+        method: 'POST',
+        cache: false,
+        headers: { 'frequency': frequency, 'ppw': ppw, 'npw': npw, 'T1': T1, 'T2': T2, 'T3': T3, 'intensity': intensity, 'time_treatment': time_treatment }
+    });
 }
 
 function stop_button() {
@@ -165,13 +157,6 @@ function handlecarrier(event) {
         headers: { 'frequency': value['frequency'], 'ppw': value['ppw'], 'npw': value['npw'] }
     });
 }
-
-
-const form_carrier = document.querySelector('#form_carrier');
-form_carrier.addEventListener('submit', handlecarrier);
-
-const form = document.querySelector('#form_modulation');
-form.addEventListener('submit', handlemodulation);
 
 
 function updateTextInput_ppw(val) {
