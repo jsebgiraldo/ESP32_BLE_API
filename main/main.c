@@ -42,6 +42,9 @@ void app_main(void)
 	MAIN_DEBUG("HEAP MEMORY: %d",esp_get_free_heap_size());
 	nvs_flash_setup(); 
 
+	gpio_pad_select_gpio(GPIO_NUM_23);
+	gpio_set_direction(GPIO_NUM_23, GPIO_MODE_OUTPUT);
+
 	wifi_app_start();
 
 	dac_modulation_wave_setup();

@@ -57,4 +57,16 @@ void pwm_carrier_wave_stop(void)
 
     ESP_ERROR_CHECK(mcpwm_stop(TARGET_MCPWM_UNIT, MCPWM_TIMER_0));
     ESP_ERROR_CHECK(mcpwm_stop(TARGET_MCPWM_UNIT, MCPWM_TIMER_1));
+
+    ESP_ERROR_CHECK(mcpwm_set_signal_low(TARGET_MCPWM_UNIT,MCPWM_TIMER_0,MCPWM_GEN_A));
+    ESP_ERROR_CHECK(mcpwm_set_signal_low(TARGET_MCPWM_UNIT,MCPWM_TIMER_1,MCPWM_GEN_A));
+
+	gpio_pad_select_gpio(TIMER0_OUTPUT_GPIO);
+	gpio_set_direction(TIMER0_OUTPUT_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(TIMER0_OUTPUT_GPIO,0);
+
+    gpio_pad_select_gpio(TIMER1_OUTPUT_GPIO);
+	gpio_set_direction(TIMER1_OUTPUT_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(TIMER1_OUTPUT_GPIO,0);
+
 }
