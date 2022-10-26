@@ -46,7 +46,6 @@ void app_main(void)
 
 	dac_modulation_wave_setup();
 
-	
 	//***********************************************//
 	
 }

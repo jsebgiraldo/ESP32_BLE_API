@@ -1,6 +1,8 @@
 
 #include "user_dac.h"
 
+#include "user_mcpwm.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
@@ -28,7 +30,7 @@ static QueueHandle_t modulation_wave_queue_handle;
 modulation_wave_config_t modulation_wave;
 
 uint8_t dac_current_state;
-uint8_t output_dac;
+int16_t output_dac;
 
 
 // ************* TIMEOUT FUNCTIONS BEGIN *************
@@ -108,6 +110,40 @@ void dac_stop_t3(void)
 
 /******************************************************/
 
+TimerHandle_t treatment_timer;
+
+void timer_treatmnet_start(void)
+{
+	if(xTimerIsTimerActive(treatment_timer))
+	{
+		xTimerStop(treatment_timer,0);
+	}
+
+	if( xTimerStart(treatment_timer, 2000/ portTICK_PERIOD_MS ) != pdPASS ) {
+    	DAC_DEBUG("%s ERROR",__FUNCTION__);
+		return;
+    }
+}
+
+void timer_treatmnet_stop(void)
+{
+	if(xTimerIsTimerActive(treatment_timer))
+	{
+		xTimerStop(treatment_timer,0);
+	}
+}
+
+void timer_treatmnet_change_period(uint8_t time)
+{
+	xTimerChangePeriod(treatment_timer,pdMS_TO_TICKS(time*60*1000),100);
+}
+
+void timer_treatment_callback( TimerHandle_t xTimer )
+{
+    dac_app_send_message(DAC_APP_MSG_STOP_OPERATION);
+    pwm_carrier_wave_stop();
+    dac_modulation_wave_stop();
+}
 
 /******************************************************/
 
@@ -118,11 +154,12 @@ void dac_callback_timeout( TimerHandle_t xTimer )
   {
       if(dac_current_state == DAC_APP_MSG_RISING_STATE)
         {
-            output_dac += 17;
-            if(output_dac >= 255)
+            output_dac += (modulation_wave.max_intensity/15);
+            if(output_dac >= modulation_wave.max_intensity)
             {
                 dac_app_send_message(DAC_APP_MSG_MAX_INTENSITY_STATE);
                 dac_stop_t1();
+                output_dac =  modulation_wave.max_intensity;
             }
             
             dac_output_voltage(DAC_CHAN, output_dac);
@@ -131,11 +168,12 @@ void dac_callback_timeout( TimerHandle_t xTimer )
 
         if(dac_current_state == DAC_APP_MSG_FALLING_STATE)
         {
-            output_dac -= 17;
+            output_dac -= (modulation_wave.max_intensity/15);
             if(output_dac <= 0)
             {
                 dac_app_send_message(DAC_APP_MSG_STAY_STATE);
                 dac_stop_t1();
+                output_dac = 0;
             }
 
             dac_output_voltage(DAC_CHAN, output_dac);
@@ -169,6 +207,8 @@ void dac_wave(void *pvParameters)
     dac_tmr_t1 = xTimerCreate("dac time t1", pdMS_TO_TICKS(1), pdTRUE, ( void * )1, &dac_callback_timeout);
     dac_tmr_t2 = xTimerCreate("dac time t2", pdMS_TO_TICKS(1), pdFALSE, ( void * )1, &dac_callback_timeout);
     dac_tmr_t3 = xTimerCreate("dac time t2", pdMS_TO_TICKS(1), pdFALSE, ( void * )1, &dac_callback_timeout);
+
+    treatment_timer = xTimerCreate("treatment", pdMS_TO_TICKS(1), pdFALSE, ( void * )1, &timer_treatment_callback);
 
     for(;;)
     {
@@ -206,7 +246,7 @@ void dac_wave(void *pvParameters)
 
                 case DAC_APP_MSG_FALLING_STATE:
                     dac_current_state = DAC_APP_MSG_FALLING_STATE;
-                    output_dac = 255;
+                    output_dac = modulation_wave.max_intensity;
                     dac_start_t1();
                     break;
 

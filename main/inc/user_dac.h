@@ -20,6 +20,7 @@ typedef struct modulation_wave_config
     uint16_t T1;
     uint16_t T2;
     uint16_t T3;
+    uint8_t max_intensity;
 }modulation_wave_config_t;
 
 /**
@@ -50,6 +51,10 @@ void dac_modulation_wave_setup(void);
 void dac_modulation_wave_start(void);
 void dac_modulation_wave_stop(void);
 void dac_modulation_wave_configure(modulation_wave_config_t *configuration);
+
+void timer_treatmnet_start(void);
+void timer_treatmnet_stop(void);
+void timer_treatmnet_change_period(uint8_t time);
 
 BaseType_t dac_app_send_message(dac_app_message_e msgID);
 

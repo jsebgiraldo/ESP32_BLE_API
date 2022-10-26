@@ -386,116 +386,10 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 {
 	HTTP_DEBUG("start.json requested");
 
-	//dac_modulation_wave_start();
+	
 	//pwm_carrier_wave_start();
 
-	size_t len_json = 0;
-	char *json_str = NULL;
-
-	len_json = httpd_req_get_hdr_value_len(req, "frequency") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "frequency", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%s",json_str);
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "ppw") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "ppw", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%s",json_str);
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "npw") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "npw", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%s",json_str);
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "T1") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "T1", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%s",json_str);
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "T2") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "T2", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%s",json_str);
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "T3") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "T3", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%s",json_str);
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "intensity") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "intensity", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%d",atoi(json_str));
-		}
-	}
-
-	len_json = httpd_req_get_hdr_value_len(req, "time_treatment") + 1;
-	if (len_json > 1)
-	{
-		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "time_treatment", json_str, len_json) == ESP_OK)
-		{
-			HTTP_DEBUG("%d",atoi(json_str));
-
-		}
-	}
-	free(json_str);
-
-	char req_start[50];
-	httpd_resp_set_type(req, "application/json");
-	httpd_resp_send(req, req_start, strlen(req_start));
-
-	return ESP_OK;
-}
-
-static esp_err_t http_stop_treatment(httpd_req_t *req)
-{
-	HTTP_DEBUG("stop.json requested");
-	pwm_carrier_wave_stop();
-	dac_modulation_wave_stop();
-
-	char req_stop[50];
-	httpd_resp_set_type(req, "application/json");
-	httpd_resp_send(req, req_stop, strlen(req_stop));
-	return ESP_OK;
-}
-
-static esp_err_t http_carrier_wave(httpd_req_t *req)
-{
-	HTTP_DEBUG("handlecarrier.json requested");
+	modulation_wave_config_t wave_config;
 
 	mcpwm_config_t pwm_config = {
 		.counter_mode = MCPWM_UP_COUNTER,
@@ -515,82 +409,101 @@ static esp_err_t http_carrier_wave(httpd_req_t *req)
 		}
 	}
 
-	len_json = httpd_req_get_hdr_value_len(req, "duty_a") + 1;
+	len_json = httpd_req_get_hdr_value_len(req, "ppw") + 1;
 	if (len_json > 1)
 	{
 		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "duty_a", json_str, len_json) == ESP_OK)
+		if (httpd_req_get_hdr_value_str(req, "ppw", json_str, len_json) == ESP_OK)
 		{
 			pwm_config.cmpr_a = atoi(json_str);
 		}
 	}
 
-	len_json = httpd_req_get_hdr_value_len(req, "duty_b") + 1;
+	len_json = httpd_req_get_hdr_value_len(req, "npw") + 1;
 	if (len_json > 1)
 	{
 		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "duty_b", json_str, len_json) == ESP_OK)
+		if (httpd_req_get_hdr_value_str(req, "npw", json_str, len_json) == ESP_OK)
 		{
 			pwm_config.cmpr_b = atoi(json_str);
 		}
 	}
-	free(json_str);
 
-	HTTP_DEBUG("Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
-	pwm_carrier_wave_configure(&pwm_config);
-
-	char req_carrier[50];
-	httpd_resp_set_type(req, "application/json");
-	httpd_resp_send(req, req_carrier, strlen(req_carrier));
-
-	return ESP_OK;
-}
-
-static esp_err_t http_modulation_wave(httpd_req_t *req)
-{
-	HTTP_DEBUG("handlemodulation.json requested");
-
-	modulation_wave_config_t wave_config;
-	size_t len_json = 0;
-	char *json_str = NULL;
-
-	len_json = httpd_req_get_hdr_value_len(req, "t1") + 1;
+	len_json = httpd_req_get_hdr_value_len(req, "T1") + 1;
 	if (len_json > 1)
 	{
 		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "t1", json_str, len_json) == ESP_OK)
+		if (httpd_req_get_hdr_value_str(req, "T1", json_str, len_json) == ESP_OK)
 		{
 			wave_config.T1 = atoi(json_str);
 		}
 	}
 
-	len_json = httpd_req_get_hdr_value_len(req, "t2") + 1;
+	len_json = httpd_req_get_hdr_value_len(req, "T2") + 1;
 	if (len_json > 1)
 	{
 		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "t2", json_str, len_json) == ESP_OK)
+		if (httpd_req_get_hdr_value_str(req, "T2", json_str, len_json) == ESP_OK)
 		{
 			wave_config.T2 = atoi(json_str);
 		}
 	}
 
-	len_json = httpd_req_get_hdr_value_len(req, "t3") + 1;
+	len_json = httpd_req_get_hdr_value_len(req, "T3") + 1;
 	if (len_json > 1)
 	{
 		json_str = malloc(len_json);
-		if (httpd_req_get_hdr_value_str(req, "t3", json_str, len_json) == ESP_OK)
+		if (httpd_req_get_hdr_value_str(req, "T3", json_str, len_json) == ESP_OK)
 		{
 			wave_config.T3 = atoi(json_str);
 		}
 	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "intensity") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "intensity", json_str, len_json) == ESP_OK)
+		{
+			wave_config.max_intensity = atoi(json_str)*2.55;
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "time_treatment") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "time_treatment", json_str, len_json) == ESP_OK)
+		{
+			timer_treatmnet_change_period(atoi(json_str));
+		}
+	}
 	free(json_str);
 
-	HTTP_DEBUG("T1: %d , T2: %d, T3: %d",wave_config.T1,wave_config.T2,wave_config.T3);
 	dac_modulation_wave_configure(&wave_config);
+	dac_modulation_wave_start();
 
-	char req_modulation[50];
+	HTTP_DEBUG("Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
+	pwm_carrier_wave_configure(&pwm_config);
+
+	timer_treatmnet_start();
+
+	char req_start[50];
 	httpd_resp_set_type(req, "application/json");
-	httpd_resp_send(req, req_modulation, strlen(req_modulation));
+	httpd_resp_send(req, req_start, strlen(req_start));
+
+	return ESP_OK;
+}
+
+static esp_err_t http_stop_treatment(httpd_req_t *req)
+{
+	HTTP_DEBUG("stop.json requested");
+	pwm_carrier_wave_stop();
+	dac_modulation_wave_stop();
+
+	char req_stop[50];
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, req_stop, strlen(req_stop));
 	return ESP_OK;
 }
 
@@ -743,24 +656,6 @@ static httpd_handle_t http_server_configure(void)
 				.user_ctx = NULL
 		};
 		httpd_register_uri_handler(http_server_handle, &stop_treatment_json);
-
-		// register OpenDoor.json handler
-		httpd_uri_t carrier_wave_json = {
-				.uri = "/handlecarrier.json",
-				.method = HTTP_POST,
-				.handler = http_carrier_wave,
-				.user_ctx = NULL
-		};
-		httpd_register_uri_handler(http_server_handle, &carrier_wave_json);
-
-				// register OpenDoor.json handler
-		httpd_uri_t modulation_wave_json = {
-				.uri = "/handlemodulation.json",
-				.method = HTTP_POST,
-				.handler = http_modulation_wave,
-				.user_ctx = NULL
-		};
-		httpd_register_uri_handler(http_server_handle, &modulation_wave_json);
 
 		httpd_uri_t ws = {
         .uri        = "/ws",
