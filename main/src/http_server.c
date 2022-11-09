@@ -27,6 +27,7 @@
 
 #include "user_dac.h"
 #include "user_mcpwm.h"
+#include "user_external_wave.h"
 
 static const char TAG[] = "[http_server]";
 
@@ -396,6 +397,13 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 		.duty_mode = MCPWM_DUTY_MODE_0,
 	};
 
+	mcpwm_config_t external_wave = {  
+		.cmpr_a = 0,                                               
+		.counter_mode = MCPWM_UP_COUNTER,
+		.duty_mode = MCPWM_DUTY_MODE_0,
+	};
+
+
 	size_t len_json = 0;
 	char *json_str = NULL;
 
@@ -478,14 +486,38 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 			timer_treatmnet_change_period(atoi(json_str));
 		}
 	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "ex_frequency") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "ex_frequency", json_str, len_json) == ESP_OK)
+		{
+			external_wave.frequency = atoi(json_str);
+		}
+	}
+
+	len_json = httpd_req_get_hdr_value_len(req, "ppws") + 1;
+	if (len_json > 1)
+	{
+		json_str = malloc(len_json);
+		if (httpd_req_get_hdr_value_str(req, "ppws", json_str, len_json) == ESP_OK)
+		{
+			external_wave.cmpr_b = atoi(json_str);
+		}
+	}
 	free(json_str);
 
+	
 	dac_modulation_wave_configure(&wave_config);
 	dac_modulation_wave_start();
 
-	HTTP_DEBUG("Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
+	HTTP_DEBUG("Carrier Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
+	HTTP_DEBUG("External Frequency: %d , duty_a: %f, duty_b: %f",external_wave.frequency,external_wave.cmpr_a,external_wave.cmpr_b);
 	pwm_carrier_wave_configure(&pwm_config);
+	external_wave_config(&external_wave);
 	pwm_carrier_wave_start();
+	external_wave_start();
 
 	timer_treatmnet_start();
 
@@ -501,6 +533,7 @@ static esp_err_t http_stop_treatment(httpd_req_t *req)
 	HTTP_DEBUG("stop.json requested");
 	pwm_carrier_wave_stop();
 	dac_modulation_wave_stop();
+	external_wave_stop();
 
 	char req_stop[50];
 	httpd_resp_set_type(req, "application/json");

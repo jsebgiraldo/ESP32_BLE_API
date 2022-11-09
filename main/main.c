@@ -11,6 +11,7 @@
 
 #include "user_mcpwm.h"
 #include "user_dac.h"
+#include "user_external_wave.h"
 
 #include "wifi_app.h"
 
@@ -48,6 +49,7 @@ void app_main(void)
 	wifi_app_start();
 
 	dac_modulation_wave_setup();
+	external_wave_setup();
 
 	//***********************************************//
 	

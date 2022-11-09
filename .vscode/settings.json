@@ -6,7 +6,23 @@
         "user_mcpwm.h": "c",
         "iosfwd": "c",
         "xlocbuf": "c",
-        "xlocale": "c"
+        "xlocale": "c",
+        "cstddef": "c",
+        "limits": "c",
+        "map": "c",
+        "memory": "c",
+        "mutex": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "xhash": "c",
+        "xstring": "c",
+        "xtree": "c",
+        "xutility": "c",
+        "condition_variable": "c",
+        "string": "c",
+        "optional": "c",
+        "new": "c",
+        "type_traits": "c"
     },
     "nrf-connect.toolchain.path": "${nrf-connect.toolchain:2.0.0}"
 }

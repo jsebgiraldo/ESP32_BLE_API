@@ -101,12 +101,15 @@ function start_button() {
 
     let time_treatment = document.getElementById('time_treatment').value;
 
+    let ex_frequency = document.getElementById('frequency_s').value;
+    let ex_duty = document.getElementById('ppws').value;
+
     $.ajax({
         url: '/start.json',
         dataType: 'json',
         method: 'POST',
         cache: false,
-        headers: { 'frequency': frequency, 'ppw': ppw, 'npw': npw, 'T1': T1, 'T2': T2, 'T3': T3, 'intensity': intensity, 'time_treatment': time_treatment }
+        headers: { 'frequency': frequency, 'ppw': ppw, 'npw': npw, 'T1': T1, 'T2': T2, 'T3': T3, 'intensity': intensity, 'time_treatment': time_treatment, 'ex_frequency': ex_frequency, 'ppws': ex_duty }
     });
 }
 
@@ -161,10 +164,41 @@ function handlecarrier(event) {
 
 function updateTextInput_ppw(val) {
     document.getElementById('value_ppw').innerHTML = '<b>' + val + '%' + '</b>';
+    document.getElementById('value_npw').innerHTML = '<b>' + (100 - val) + '%' + '</b>';
+    document.getElementById('npw').value = (100 - val);
 }
 
 function updateTextInput_npw(val) {
     document.getElementById('value_npw').innerHTML = '<b>' + val + '%' + '</b>';
+    document.getElementById('value_ppw').innerHTML = '<b>' + (100 - val) + '%' + '</b>';
+    document.getElementById('ppw').value = (100 - val);
+}
+
+function updateTextInput_freq(val) {
+    if (val >= 1 * 1000 * 1000) {
+        window.alert('Frequency input is invalid');
+        document.getElementById('frequency').value = 10 * 1000;
+        document.getElementById('period').value = 0.1;
+        return;
+    }
+    document.getElementById('period').value = (1 / val) * 1000;
+}
+
+function updateTextInput_exfreq(val) {
+    if (val > 1 * 1000) {
+        window.alert('Frequency input is invalid');
+        document.getElementById('frequency_s').value = 1 * 1000;
+        return;
+    }
+}
+
+function updateTextInput_period(val) {
+    document.getElementById('frequency').value = (1 / val) * 1000;
+}
+
+
+function updateTextInput_ppws(val) {
+    document.getElementById('value_ppws').innerHTML = '<b>' + val + '%' + '</b>';
 }
 
 function updateIntensityRange(val) {
