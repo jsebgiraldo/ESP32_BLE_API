@@ -2,6 +2,14 @@
 #include "user_mcpwm.h"
 #include "string.h"
 
+static const char TAG[] = "[CARRIER]";
+
+#define CARRIER_DEBUG_ENABLE
+#ifdef CARRIER_DEBUG_ENABLE
+	#define CARRIER_DEBUG(...) ESP_LOGI(TAG,LOG_COLOR(LOG_COLOR_BROWN) __VA_ARGS__)
+#else
+	#define CARRIER_DEBUG(...)
+#endif
 
 mcpwm_config_t pwm_config;
 
@@ -17,7 +25,7 @@ void pwm_carrier_wave_start(void) {
 void pwm_carrier_wave_configure(mcpwm_config_t *config)
 {
     memcpy(&pwm_config,config,sizeof(mcpwm_config_t));
-
+    CARRIER_DEBUG("Carrier Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
     if(pwm_config.frequency <= 1*1000*1000)
     {
         ESP_ERROR_CHECK(mcpwm_init(TARGET_MCPWM_UNIT, MCPWM_TIMER_0, &pwm_config));

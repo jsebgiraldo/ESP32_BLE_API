@@ -125,6 +125,16 @@ function stop_button() {
 
 }
 
+function EnterSleep() {
+
+    $.ajax({
+        url: '/sleep.json',
+        dataType: 'json',
+        method: 'GET',
+        cache: false
+    });
+}
+
 function handlemodulation(event) {
     event.preventDefault();
 

@@ -7,7 +7,7 @@ static const char TAG[] = "[EX WAVE]";
 
 #define EXWAVE_DEBUG_ENABLE
 #ifdef EXWAVE_DEBUG_ENABLE
-	#define EXWAVE_DEBUG(...) ESP_LOGI(TAG,LOG_COLOR(LOG_COLOR_BROWN) __VA_ARGS__)
+	#define EXWAVE_DEBUG(...) ESP_LOGI(TAG,LOG_COLOR(LOG_COLOR_CYAN) __VA_ARGS__)
 #else
 	#define EXWAVE_DEBUG(...)
 #endif
@@ -62,6 +62,7 @@ void external_wave_setup(void)
 void external_wave_config(mcpwm_config_t *config)
 {
     memcpy(&wave_config,config,sizeof(mcpwm_config_t));
+    EXWAVE_DEBUG("External Frequency: %d , duty_a: %f, duty_b: %f",wave_config.frequency,wave_config.cmpr_a,wave_config.cmpr_b);	
 }
 
 void external_wave_stop(void)

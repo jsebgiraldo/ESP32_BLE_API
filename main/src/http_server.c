@@ -9,12 +9,14 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 
+#include "sys/param.h"
+
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_ota_ops.h"
 #include "esp_wifi.h"
-#include "sys/param.h"
+#include "esp_sleep.h"
 
 #include "http_server.h"
 #include "wifi_app.h"
@@ -28,6 +30,7 @@
 #include "user_dac.h"
 #include "user_mcpwm.h"
 #include "user_external_wave.h"
+#include "user_timer.h"
 
 static const char TAG[] = "[http_server]";
 
@@ -512,14 +515,13 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 	dac_modulation_wave_configure(&wave_config);
 	dac_modulation_wave_start();
 
-	HTTP_DEBUG("Carrier Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
-	HTTP_DEBUG("External Frequency: %d , duty_a: %f, duty_b: %f",external_wave.frequency,external_wave.cmpr_a,external_wave.cmpr_b);
 	pwm_carrier_wave_configure(&pwm_config);
 	external_wave_config(&external_wave);
 	pwm_carrier_wave_start();
 	external_wave_start();
 
 	timer_treatmnet_start();
+	deep_sleep_timer_stop();
 
 	char req_start[50];
 	httpd_resp_set_type(req, "application/json");
@@ -538,6 +540,18 @@ static esp_err_t http_stop_treatment(httpd_req_t *req)
 	char req_stop[50];
 	httpd_resp_set_type(req, "application/json");
 	httpd_resp_send(req, req_stop, strlen(req_stop));
+	return ESP_OK;
+}
+
+static esp_err_t http_sleep(httpd_req_t *req)
+{
+	HTTP_DEBUG("sleep.json requested");
+
+	char req_stop[50];
+	httpd_resp_set_type(req, "application/json");
+	httpd_resp_send(req, req_stop, strlen(req_stop));
+
+	esp_deep_sleep_start();
 	return ESP_OK;
 }
 
@@ -690,6 +704,15 @@ static httpd_handle_t http_server_configure(void)
 				.user_ctx = NULL
 		};
 		httpd_register_uri_handler(http_server_handle, &stop_treatment_json);
+
+			// register OpenDoor.json handler
+		httpd_uri_t sleep_json = {
+				.uri = "/sleep.json",
+				.method = HTTP_GET,
+				.handler = http_sleep,
+				.user_ctx = NULL
+		};
+		httpd_register_uri_handler(http_server_handle, &sleep_json);
 
 		httpd_uri_t ws = {
         .uri        = "/ws",

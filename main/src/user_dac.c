@@ -1,7 +1,8 @@
 
 #include "user_dac.h"
-
+#include "user_bsp.h"
 #include "user_mcpwm.h"
+#include "user_timer.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -124,7 +125,7 @@ void timer_treatmnet_start(void)
 		return;
     }
 
-    gpio_set_level(GPIO_NUM_23,1);
+    ENABLE_STEP_UP_CONVERTER();
 }
 
 void timer_treatmnet_stop(void)
@@ -145,7 +146,8 @@ void timer_treatment_callback( TimerHandle_t xTimer )
     dac_app_send_message(DAC_APP_MSG_STOP_OPERATION);
     pwm_carrier_wave_stop();
     dac_modulation_wave_stop();
-    gpio_set_level(GPIO_NUM_23,0);
+    DISABLE_STEP_UP_CONVERTER();
+    deep_sleep_timer_start();
 }
 
 /******************************************************/
@@ -239,7 +241,7 @@ void dac_wave(void *pvParameters)
                     dac_stop_t2();
                     dac_stop_t3();
                     dac_output_voltage(DAC_CHAN, 0);
-                    gpio_set_level(GPIO_NUM_23,0);
+                    DISABLE_STEP_UP_CONVERTER();
                     break;
 
                 case DAC_APP_MSG_RISING_STATE:

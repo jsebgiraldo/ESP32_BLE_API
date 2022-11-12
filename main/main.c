@@ -3,6 +3,7 @@
  */
 
 #include "esp_log.h"
+#include "esp_sleep.h"
 #include "nvs_flash.h"
 
 #include "freertos/FreeRTOS.h"
@@ -12,6 +13,8 @@
 #include "user_mcpwm.h"
 #include "user_dac.h"
 #include "user_external_wave.h"
+#include "user_bsp.h"
+#include "user_timer.h"
 
 #include "wifi_app.h"
 
@@ -40,16 +43,39 @@ void nvs_flash_setup(void)
 void app_main(void)
 {
 
+	/* Determine wake up reason */
+	const char* wakeup_reason;
+	esp_sleep_wakeup_cause_t res;
+	res = esp_sleep_get_wakeup_cause();
+	switch (res) {
+		case ESP_SLEEP_WAKEUP_TIMER:
+			wakeup_reason = "timer";
+			break;
+		case ESP_SLEEP_WAKEUP_GPIO:
+			wakeup_reason = "pin";
+			break;
+		case ESP_SLEEP_WAKEUP_EXT1:
+			wakeup_reason = "Wake up from GPIO";
+			break;
+		default:
+			wakeup_reason = "other";
+			break;
+	}
+
+	MAIN_DEBUG("Returned from deep sleep, reason: %s [No: %x]",wakeup_reason, res);
+
 	MAIN_DEBUG("HEAP MEMORY: %d",esp_get_free_heap_size());
 	nvs_flash_setup(); 
 
-	gpio_pad_select_gpio(GPIO_NUM_23);
-	gpio_set_direction(GPIO_NUM_23, GPIO_MODE_OUTPUT);
+	user_bsp_setup();
 
 	wifi_app_start();
 
 	dac_modulation_wave_setup();
 	external_wave_setup();
+
+	deep_sleep_setup_timer();
+	deep_sleep_timer_start();
 
 	//***********************************************//
 	
