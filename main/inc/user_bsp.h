@@ -15,7 +15,7 @@
 
 #define BUTTON_WAKEUP_LEVEL   0
 
-#define USER_BUTTON_PIN        GPIO_NUM_0
+#define USER_BUTTON_PIN        GPIO_NUM_35
 #define USER_BUTTON_HIGH_CHK() (gpio_get_level(USER_BUTTON_PIN) == 1)
 #define USER_BUTTON_LOW_CHK()  (gpio_get_level(USER_BUTTON_PIN) == 0)
 
