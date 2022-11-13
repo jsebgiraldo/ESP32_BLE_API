@@ -10,13 +10,17 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
-#include "user_mcpwm.h"
-#include "user_dac.h"
+#include "user_carrier_wave.h"
+#include "user_modulation_wave.h"
 #include "user_external_wave.h"
+#include "user_hvconverter.h"
 #include "user_bsp.h"
 #include "user_timer.h"
 
 #include "wifi_app.h"
+
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
 
 static const char TAG[] = "[MAIN]";
 
@@ -39,6 +43,7 @@ void nvs_flash_setup(void)
 	}
 	ESP_ERROR_CHECK(ret);
 }
+
 
 void app_main(void)
 {
@@ -74,9 +79,12 @@ void app_main(void)
 	dac_modulation_wave_setup();
 	external_wave_setup();
 
+	hv_converter_init();
+
 	deep_sleep_setup_timer();
 	deep_sleep_timer_start();
 
+	
 	//***********************************************//
 	
 }

@@ -1,5 +1,5 @@
 
-#include "user_mcpwm.h"
+#include "user_carrier_wave.h"
 #include "string.h"
 
 static const char TAG[] = "[CARRIER]";

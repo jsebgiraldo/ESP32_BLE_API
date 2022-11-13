@@ -1,5 +1,5 @@
 /*
- * user_dac.h
+ * user_modulation_wave.h
  *
  *  Created on: Oct 17, 2022
  *      Author: jsebgiraldo

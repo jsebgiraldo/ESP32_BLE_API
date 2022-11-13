@@ -1,7 +1,7 @@
 
-#include "user_dac.h"
+#include "user_modulation_wave.h"
 #include "user_bsp.h"
-#include "user_mcpwm.h"
+#include "user_carrier_wave.h"
 #include "user_timer.h"
 
 #include "freertos/FreeRTOS.h"
@@ -23,7 +23,7 @@ static const char TAG[] = "[DAC]";
 	#define DAC_DEBUG(...)
 #endif
 
-#define DAC_CHAN    DAC_CHANNEL_2
+#define DAC_CHAN_2    DAC_CHANNEL_2
 
 
 // Queue handle used to manipulate the main queue of events
@@ -167,7 +167,7 @@ void dac_callback_timeout( TimerHandle_t xTimer )
                 output_dac =  modulation_wave.max_intensity;
             }
             
-            dac_output_voltage(DAC_CHAN, output_dac);
+            dac_output_voltage(DAC_CHAN_2, output_dac);
             return;
         }
 
@@ -181,7 +181,7 @@ void dac_callback_timeout( TimerHandle_t xTimer )
                 output_dac = 0;
             }
 
-            dac_output_voltage(DAC_CHAN, output_dac);
+            dac_output_voltage(DAC_CHAN_2, output_dac);
             return;
         }
   }
@@ -240,7 +240,7 @@ void dac_wave(void *pvParameters)
                     dac_stop_t1();
                     dac_stop_t2();
                     dac_stop_t3();
-                    dac_output_voltage(DAC_CHAN, 0);
+                    dac_output_voltage(DAC_CHAN_2, 0);
                     DISABLE_STEP_UP_CONVERTER();
                     break;
 
@@ -299,8 +299,8 @@ BaseType_t dac_app_send_message(dac_app_message_e msgID)
 
 void dac_modulation_wave_setup(void)
 {
-    dac_output_enable(DAC_CHAN);
-	dac_output_voltage(DAC_CHAN, 0);
+    dac_output_enable(DAC_CHAN_2);
+	dac_output_voltage(DAC_CHAN_2, 0);
 
     xTaskCreate( dac_wave, "dac_wave", 2*1024, NULL, 5, NULL); // Task main queue
 }

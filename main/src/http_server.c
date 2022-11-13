@@ -27,8 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "user_dac.h"
-#include "user_mcpwm.h"
+#include "user_modulation_wave.h"
+#include "user_carrier_wave.h"
 #include "user_external_wave.h"
 #include "user_timer.h"
 

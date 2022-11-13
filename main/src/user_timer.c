@@ -1,6 +1,10 @@
 
 #include "user_timer.h"
-
+#include "user_hvconverter.h"
+#include "driver/gpio.h"
+#include <driver/dac.h>
+#include <driver/rtc_io.h>
+#include "soc/rtc.h"
 
 static const char TAG[] = "[SLEEP]";
 
@@ -16,6 +20,9 @@ TimerHandle_t deep_sleep_timer;
 static void deep_sleep_timer_callback( TimerHandle_t xTimer )
 {
 	SLEEP_DEBUG("Going to sleep");
+	dac_output_disable(DAC_CHANNEL_1);
+	rtc_gpio_isolate(GPIO_NUM_25);
+	dac_output_disable(DAC_CHANNEL_2);
     esp_deep_sleep_start();
 }
 

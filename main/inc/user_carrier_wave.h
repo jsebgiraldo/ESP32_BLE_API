@@ -1,5 +1,5 @@
 /*
- * user_mcpwm.h
+ * user_carrier_wave.h
  *
  *  Created on: Oct 17, 2022
  *      Author: jsebgiraldo

@@ -1,6 +1,6 @@
 
 #include "user_external_wave.h"
-#include "user_mcpwm.h"
+#include "user_carrier_wave.h"
 #include "string.h"
 
 static const char TAG[] = "[EX WAVE]";
