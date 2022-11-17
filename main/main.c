@@ -1,5 +1,8 @@
 /**
  * Application entry point.
+ * 
+ *      Author: Juan Sebastian Giraldo Duque
+ *      gitlab: https://github.com/jsebgiraldo
  */
 
 #include "esp_log.h"
@@ -14,6 +17,7 @@
 #include "user_modulation_wave.h"
 #include "user_external_wave.h"
 #include "user_hvconverter.h"
+#include "user_battery_level.h"
 #include "user_bsp.h"
 #include "user_timer.h"
 
@@ -74,17 +78,16 @@ void app_main(void)
 
 	user_bsp_setup();
 
-	wifi_app_start();
-
 	dac_modulation_wave_setup();
 	external_wave_setup();
 
 	hv_converter_init();
+	battery_level_init();
 
 	deep_sleep_setup_timer();
 	deep_sleep_timer_start();
 
-	
+	wifi_app_start();
 	//***********************************************//
 	
 }

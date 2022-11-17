@@ -38,8 +38,18 @@
         <div class="card">
             <h2>System control</h2>
             <hr>
-            <label for="sleep"><b>Enter to sleep:</b></label>
-            <button name="sleep" onclick="EnterSleep()" class="button">Sleep</button>
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    <label for="sleep"><b>Enter to sleep:</b></label>
+                    <button name="sleep" onclick="EnterSleep()" class="button">Sleep</button>
+                </div>
+
+                <div>
+                    <label><b>battery level:</b></label>
+                    <span id="battery"><b>100%</b></span>
+                </div>
+            </div>
+
         </div>
 
         <div class="card">

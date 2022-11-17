@@ -5,6 +5,24 @@ var seconds = null;
 var otaTimerVar = null;
 
 
+/**
+ * Initialize functions here.
+ */
+$(document).ready(function() {
+
+    setInterval(getbatterylevel, 1000);
+
+});
+
+let level = 0;
+
+function getbatterylevel() {
+
+    $.getJSON('/battery.json', function(data) {
+        document.getElementById('battery').innerHTML = '<b>' + data["battery"] + '%' + '</b>';
+    });
+
+}
 
 /**
  * Handles the firmware update.
