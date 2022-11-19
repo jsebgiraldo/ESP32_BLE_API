@@ -23,8 +23,8 @@
 #define ENABLE_STEP_UP_CONVERTER() gpio_set_level(GPIO_NUM_23,1)
 #define DISABLE_STEP_UP_CONVERTER() gpio_set_level(GPIO_NUM_23,0)
 
-#define STAND_BY_CHARGER        GPIO_NUM_33
-#define CHARGING_SIGNAL         GPIO_NUM_32
+#define STAND_BY_CHARGER        GPIO_NUM_32
+#define CHARGING_SIGNAL         GPIO_NUM_33
 
 #define LED_STAND_BY            GPIO_NUM_13
 #define LED_STAND_BY_ON()         gpio_set_level(GPIO_NUM_13,1)
