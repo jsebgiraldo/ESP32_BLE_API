@@ -89,8 +89,8 @@ void adc(void *pvParameters)
         uint8_t dac_output = -0.255*voltage + 255;
 
         dac_output_voltage(DAC_CHAN_1, dac_output);
-
-        vTaskDelay(pdMS_TO_TICKS(100));
+        HV_DEBUG("Raw: %d\tVoltage: %dmV \tRaw dac: %d", adc_reading, voltage, dac_output);
+        vTaskDelay(pdMS_TO_TICKS(1000));
 
 	}
 	vTaskDelete(NULL);

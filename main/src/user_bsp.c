@@ -118,7 +118,7 @@ static void bsp_step_up_converter(void)
 
 static void bsp_user_button(void)
 {
-    const int ext_wakeup_pin = GPIO_NUM_0;
+    const int ext_wakeup_pin = USER_BUTTON_PIN;
     const uint64_t ext_wakeup_pin_mask = 1ULL << ext_wakeup_pin;
 
     BSP_DEBUG("Enabling EXT1 wakeup on pin GPIO%d", ext_wakeup_pin);
