@@ -23,10 +23,10 @@ static void deep_sleep_timer_callback( TimerHandle_t xTimer )
 {
 	SLEEP_DEBUG("Going to sleep");
 	dac_output_disable(DAC_CHANNEL_1);
-	rtc_gpio_isolate(GPIO_NUM_25);
-	rtc_gpio_isolate(STAND_BY_CHARGER);
-	rtc_gpio_isolate(CHARGING_SIGNAL);
 	dac_output_disable(DAC_CHANNEL_2);
+	rtc_gpio_isolate(GPIO_NUM_25);
+	LED_STAND_BY_OFF();
+	LED_CHARGING_OFF();
     esp_deep_sleep_start();
 }
 

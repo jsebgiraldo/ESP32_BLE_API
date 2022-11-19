@@ -59,11 +59,11 @@ void irs_task(void *pvParam)
 			case STAND_BY_CHARGER:
                 if(gpio_get_level(io_num))
 				{
-					LED_STAND_BY_ON();
+					LED_STAND_BY_OFF();
 				}
 				else
 				{
-					LED_STAND_BY_OFF();
+					LED_STAND_BY_ON();
 				}
 				break;
 
@@ -71,11 +71,11 @@ void irs_task(void *pvParam)
 				
 				if(gpio_get_level(io_num))
 				{
-					LED_CHARGING_ON();
+					LED_CHARGING_OFF();
 				}
 				else
 				{
-					LED_CHARGING_OFF();
+					LED_CHARGING_ON();
 				}
 
 				break;
