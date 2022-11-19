@@ -27,6 +27,8 @@ static void deep_sleep_timer_callback( TimerHandle_t xTimer )
 	rtc_gpio_isolate(GPIO_NUM_25);
 	LED_STAND_BY_OFF();
 	LED_CHARGING_OFF();
+	rtc_gpio_isolate(LED_STAND_BY);
+	rtc_gpio_isolate(LED_CHARGING);
     esp_deep_sleep_start();
 }
 
