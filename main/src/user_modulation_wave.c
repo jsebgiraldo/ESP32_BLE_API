@@ -24,7 +24,7 @@ static const char TAG[] = "[DAC]";
 #endif
 
 #define DAC_CHAN_2    DAC_CHANNEL_2
-
+#define DAC_CHAN_1    DAC_CHANNEL_1
 
 // Queue handle used to manipulate the main queue of events
 static QueueHandle_t modulation_wave_queue_handle;
@@ -229,6 +229,7 @@ void dac_wave(void *pvParameters)
                     {
                         xTimerChangePeriod(dac_tmr_t1,pdMS_TO_TICKS(modulation_wave.T1/15),100);
                         dac_start_t1();
+                        dac_output_voltage(DAC_CHAN_1, modulation_wave.hv_intensity);
                         dac_app_send_message(DAC_APP_MSG_RISING_STATE);
                     }
                     
@@ -301,6 +302,9 @@ void dac_modulation_wave_setup(void)
 {
     dac_output_enable(DAC_CHAN_2);
 	dac_output_voltage(DAC_CHAN_2, 0);
+
+    dac_output_enable(DAC_CHAN_1);
+	dac_output_voltage(DAC_CHAN_1, 0);
 
     xTaskCreate( dac_wave, "dac_wave", 2*1024, NULL, 5, NULL); // Task main queue
 }

@@ -479,6 +479,7 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 		if (httpd_req_get_hdr_value_str(req, "intensity", json_str, len_json) == ESP_OK)
 		{
 			wave_config.max_intensity = atoi(json_str)*2.55;
+			wave_config.hv_intensity = atoi(json_str)*1.06;
 		}
 	}
 

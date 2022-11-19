@@ -23,8 +23,6 @@ static const char TAG[] = "[HV CONV]";
 #define DEFAULT_VREF    1100        //Use adc2_vref_to_gpio() to obtain a better estimate
 #define NO_OF_SAMPLES   64          //Multisampling
 
-#define DAC_CHAN_1  DAC_CHANNEL_1
-
 static esp_adc_cal_characteristics_t *adc_chars;
 static const adc_channel_t channel = ADC_CHANNEL_0;     //GPIO34 if ADC1, GPIO14 if ADC2
 static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
@@ -63,10 +61,7 @@ void adc(void *pvParameters)
 {
 	//Check if Two Point or Vref are burned into eFuse
     check_efuse();
-
-    dac_output_enable(DAC_CHAN_1);
-	dac_output_voltage(DAC_CHAN_1, 0);
-
+    
 	adc1_config_width(width);
 	adc1_config_channel_atten(channel, atten);
 	adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
@@ -84,12 +79,8 @@ void adc(void *pvParameters)
         adc_reading /= NO_OF_SAMPLES;
         //Convert adc_reading to voltage in mV
         uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
-     
-        if(voltage >= 1000) voltage = 1000;
-        uint8_t dac_output = -0.106*voltage + 106; // [0,1.25V]
-
-        dac_output_voltage(DAC_CHAN_1, dac_output);
-        HV_DEBUG("Raw: %d\tVoltage: %dmV \tRaw dac: %d", adc_reading, voltage, dac_output);
+    
+        HV_DEBUG("Raw: %d\tVoltage: %dmV \t", adc_reading, voltage);
         vTaskDelay(pdMS_TO_TICKS(1000));
 
 	}
@@ -101,7 +92,3 @@ void hv_converter_init(void)
     xTaskCreate( adc, "adc", 2*1024, NULL, 5, NULL); // Task main queue
 }
 
-void hv_convertert_output_off(void)
-{
-    dac_output_voltage(DAC_CHAN_1, 0);
-}

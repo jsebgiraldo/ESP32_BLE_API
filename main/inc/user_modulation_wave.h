@@ -21,6 +21,7 @@ typedef struct modulation_wave_config
     uint16_t T2;
     uint16_t T3;
     uint8_t max_intensity;
+    uint8_t hv_intensity;
 }modulation_wave_config_t;
 
 /**
