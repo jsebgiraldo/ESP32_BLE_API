@@ -141,10 +141,22 @@ static void bsp_leds_gpio_init(void)
     LED_CHARGING_OFF();
 }
 
+static void bsp_battery_controller_init(void)
+{
+	gpio_pad_select_gpio(STAND_BY_CHARGER);
+	gpio_set_direction(STAND_BY_CHARGER, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(STAND_BY_CHARGER,GPIO_PULLUP_ONLY);
+
+	gpio_pad_select_gpio(CHARGING_SIGNAL);
+	gpio_set_direction(CHARGING_SIGNAL, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(CHARGING_SIGNAL,GPIO_PULLUP_ONLY);
+}
+
 void user_bsp_setup(void)
 {
     bsp_step_up_converter();
     bsp_user_button();
     bsp_leds_gpio_init();
+  	bsp_battery_controller_init();
     bsp_gpio_setup_interrupts();
 }
