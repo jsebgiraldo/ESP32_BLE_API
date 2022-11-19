@@ -229,7 +229,7 @@ void dac_wave(void *pvParameters)
                     {
                         xTimerChangePeriod(dac_tmr_t1,pdMS_TO_TICKS(modulation_wave.T1/15),100);
                         dac_start_t1();
-                        dac_output_voltage(DAC_CHAN_1, modulation_wave.hv_intensity);
+                        dac_output_voltage(DAC_CHAN_1, -1*modulation_wave.hv_intensity+106);
                         dac_app_send_message(DAC_APP_MSG_RISING_STATE);
                     }
                     
