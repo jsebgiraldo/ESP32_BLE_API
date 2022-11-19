@@ -86,7 +86,7 @@ void adc(void *pvParameters)
         uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
      
         if(voltage >= 1000) voltage = 1000;
-        uint8_t dac_output = -0.255*voltage + 255;
+        uint8_t dac_output = -0.106*voltage + 106; // [0,1.25V]
 
         dac_output_voltage(DAC_CHAN_1, dac_output);
         HV_DEBUG("Raw: %d\tVoltage: %dmV \tRaw dac: %d", adc_reading, voltage, dac_output);
