@@ -5,11 +5,12 @@
 file(GLOB srcs
         "*.c"
         "src/*.c"
-
+        "src/BLE/*.c"
         )
 
 set(dirs
         "inc"
+        "inc/BLE"
         )
 
 set(files

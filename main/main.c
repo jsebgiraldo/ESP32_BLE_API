@@ -22,7 +22,7 @@
 #include "user_timer.h"
 #include "user_max30102.h"
 
-#include "wifi_app.h"
+#include "user_ble.h"
 
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
@@ -69,7 +69,25 @@ esp_err_t i2c_master_init(i2c_port_t i2c_port){
 }
 
 void get_bpm(void* param) {
-    printf("MAX30102 Test\n");
+    printf("MAX30102\n");
+
+     //Init I2C_NUM_0
+    ESP_ERROR_CHECK(i2c_master_init(I2C_PORT));
+    //Init sensor at I2C_NUM_0
+    ESP_ERROR_CHECK(max30102_init( &max30102, I2C_PORT,
+                   MAX30102_DEFAULT_OPERATING_MODE,
+                   MAX30102_DEFAULT_SAMPLING_RATE,
+                   MAX30102_DEFAULT_LED_PULSE_WIDTH,
+                   MAX30102_DEFAULT_IR_LED_CURRENT,
+                   MAX30102_DEFAULT_START_RED_LED_CURRENT,
+                   MAX30102_DEFAULT_MEAN_FILTER_SIZE,
+                   MAX30102_DEFAULT_PULSE_BPM_SAMPLE_SIZE,
+                   MAX30102_DEFAULT_ADC_RANGE, 
+                   MAX30102_DEFAULT_SAMPLE_AVERAGING,
+                   MAX30102_DEFAULT_ROLL_OVER,
+                   MAX30102_DEFAULT_ALMOST_FULL,
+                   false ));
+
     max30102_data_t result = {};
     /*ESP_ERROR_CHECK(max30102_print_registers(&max30102));*/
     while(true) {
@@ -107,8 +125,8 @@ void app_main(void)
 	}
 
 	MAIN_DEBUG("Returned from deep sleep, reason: %s [No: %x]",wakeup_reason, res);
-
 	MAIN_DEBUG("HEAP MEMORY: %d",esp_get_free_heap_size());
+
 	nvs_flash_setup(); 
 
 	user_bsp_setup();
@@ -118,31 +136,14 @@ void app_main(void)
 
 	hv_converter_init();
 	battery_level_init();
-
-    //Init I2C_NUM_0
-    ESP_ERROR_CHECK(i2c_master_init(I2C_PORT));
-    //Init sensor at I2C_NUM_0
-    ESP_ERROR_CHECK(max30102_init( &max30102, I2C_PORT,
-                   MAX30102_DEFAULT_OPERATING_MODE,
-                   MAX30102_DEFAULT_SAMPLING_RATE,
-                   MAX30102_DEFAULT_LED_PULSE_WIDTH,
-                   MAX30102_DEFAULT_IR_LED_CURRENT,
-                   MAX30102_DEFAULT_START_RED_LED_CURRENT,
-                   MAX30102_DEFAULT_MEAN_FILTER_SIZE,
-                   MAX30102_DEFAULT_PULSE_BPM_SAMPLE_SIZE,
-                   MAX30102_DEFAULT_ADC_RANGE, 
-                   MAX30102_DEFAULT_SAMPLE_AVERAGING,
-                   MAX30102_DEFAULT_ROLL_OVER,
-                   MAX30102_DEFAULT_ALMOST_FULL,
-                   false ));
-    
+ 
     //Start test task
-    xTaskCreate(get_bpm, "Get BPM", 8192, NULL, 1, NULL);
+    //xTaskCreate(get_bpm, "Get BPM", 8192, NULL, 1, NULL);
+
+    user_ble_start();
 
 	deep_sleep_setup_timer();
 	deep_sleep_timer_start();
-
-	wifi_app_start();
 	//***********************************************//
 	
 }
