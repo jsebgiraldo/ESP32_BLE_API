@@ -27,6 +27,25 @@
 #include "user_ble.h"
 #include "esp_gatt_common_api.h"
 
+#include "user_carrier_wave.h"
+#include "user_external_wave.h"
+#include "user_modulation_wave.h"
+
+modulation_wave_config_t wave_config;
+
+mcpwm_config_t pwm_config = {
+    .counter_mode = MCPWM_UP_COUNTER,
+    .duty_mode = MCPWM_DUTY_MODE_0,
+};
+
+mcpwm_config_t external_wave = {  
+    .cmpr_a = 0,                                               
+    .counter_mode = MCPWM_UP_COUNTER,
+    .duty_mode = MCPWM_DUTY_MODE_0,
+};
+
+
+
 #define DEBUG_ON  0
 
 #if DEBUG_ON
@@ -60,14 +79,7 @@
 static uint8_t adv_config_done       = 0;
 
 uint16_t gatt_db_handle_table[HRS_IDX_NB];
-
-typedef struct {
-    uint8_t                 *prepare_buf;
-    int                     prepare_len;
-} prepare_type_env_t;
-
-static prepare_type_env_t prepare_write_env;
-
+uint16_t gatt_svc_device_config_handle_table[HRS_IDX_NB];
 
 static uint8_t service_uuid[16] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -116,6 +128,16 @@ struct gatts_profile_inst {
     esp_bt_uuid_t descr_uuid;
 };
 
+static uint32_t bytes_array_to_int(uint8_t *buffer, uint16_t len)
+{
+    uint32_t var_int = buffer[0];
+    for(int i = 1 ; i < len ; i++)
+    {
+        var_int += (buffer[i] << (8*i));
+    }
+    return var_int;
+}
+
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
 					esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
@@ -143,6 +165,10 @@ static const uint8_t CHAR_TREATMENT_TIME[]              = {0x02,0x00,0x12,0xAC,0
 static const uint8_t char_treatment_name[]  = "Treatment time";
 static const uint8_t CHAR_MAX_INTENSITY[]               = {0x02,0x00,0x12,0xAC,0x42,0x02,0xEB,0xA1,0xED,0x11,0x7D,0x79,0x98,0xFC,0xAF,0x5C};
 static const uint8_t char_max_intensity_name[]  = "Max intensity";
+static const uint8_t CHAR_START_TREATMENT[]             = {0x02,0x00,0x12,0xAC,0x42,0x02,0xEB,0xA1,0xED,0x11,0x7D,0x79,0x45,0xD4,0xAF,0x5C};
+static const uint8_t char_start_treatment_name[]  = "Start treatment";
+
+
 
 static const uint8_t GATTS_SERVICE_UUID_CARRIER_WAVE[]  = {0x02,0x00,0x12,0xAC,0x42,0x02,0xEB,0xA1,0xED,0x11,0x8B,0x79,0xD6,0x0C,0x70,0xC7};
 static const uint8_t CHAR_CARRIER_FREQUENCY[]           = {0x02,0x00,0x12,0xAC,0x42,0x02,0xEB,0xA1,0xED,0x11,0x8B,0x79,0x68,0x11,0x70,0xC7};
@@ -251,7 +277,7 @@ static const esp_gatts_attr_db_t gatt_svc2_db[HRS_IDX_NB] =
     /* Characteristic Value */
     [IDX_CHAR_VAL_A] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_TREATMENT_TIME, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+      sizeof(uint16_t), sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic User Descriptor */
     [IDX_CHAR_CFG_A]  =
@@ -272,6 +298,21 @@ static const esp_gatts_attr_db_t gatt_svc2_db[HRS_IDX_NB] =
     [IDX_CHAR_CFG_B]  =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_user_description, ESP_GATT_PERM_READ,
       sizeof(char_max_intensity_name), sizeof(char_max_intensity_name), (uint8_t *)char_max_intensity_name}},
+
+    /* Characteristic Declaration */
+    [IDX_CHAR_C]     =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
+      CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
+
+    /* Characteristic Value */
+    [IDX_CHAR_VAL_C] =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_START_TREATMENT, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+
+    /* Characteristic User Descriptor */
+    [IDX_CHAR_CFG_C]  =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_user_description, ESP_GATT_PERM_READ,
+      sizeof(char_start_treatment_name), sizeof(char_start_treatment_name), (uint8_t *)char_start_treatment_name}},
  
 };
 
@@ -471,76 +512,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
 }
 
-void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param)
-{
-    EXAMPLE_DEBUG(EXAMPLE_TAG, "prepare write, handle = %d, value len = %d", param->write.handle, param->write.len);
-    esp_gatt_status_t status = ESP_GATT_OK;
-    if (prepare_write_env->prepare_buf == NULL) {
-        prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
-        prepare_write_env->prepare_len = 0;
-        if (prepare_write_env->prepare_buf == NULL) {
-            ESP_LOGE(EXAMPLE_TAG, "%s, Gatt_server prep no mem", __func__);
-            status = ESP_GATT_NO_RESOURCES;
-        }
-    } else {
-        if(param->write.offset > PREPARE_BUF_MAX_SIZE) {
-            status = ESP_GATT_INVALID_OFFSET;
-        } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
-            status = ESP_GATT_INVALID_ATTR_LEN;
-        }
-    }
-    /*send response when param->write.need_rsp is true */
-    if (param->write.need_rsp){
-        esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
-        if (gatt_rsp != NULL){
-            gatt_rsp->attr_value.len = param->write.len;
-            gatt_rsp->attr_value.handle = param->write.handle;
-            gatt_rsp->attr_value.offset = param->write.offset;
-            gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-            memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, status, gatt_rsp);
-            if (response_err != ESP_OK){
-               ESP_LOGE(EXAMPLE_TAG, "Send response error");
-            }
-            free(gatt_rsp);
-        }else{
-            ESP_LOGE(EXAMPLE_TAG, "%s, malloc failed", __func__);
-        }
-    }
-    if (status != ESP_GATT_OK){
-        return;
-    }
-    memcpy(prepare_write_env->prepare_buf + param->write.offset,
-           param->write.value,
-           param->write.len);
-    prepare_write_env->prepare_len += param->write.len;
-
-}
-uint8_t long_write[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
-void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
-    if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC && prepare_write_env->prepare_buf){
-        if(prepare_write_env->prepare_len == 256) {
-            bool long_write_success = true;
-            for(uint16_t i = 0; i < prepare_write_env->prepare_len; i ++) {
-                if(prepare_write_env->prepare_buf[i] != long_write[i%16]) {
-                    long_write_success = false;
-                    break;
-                }
-            }
-            if(long_write_success) {
-                ESP_LOGI(EXAMPLE_TAG, "(4) ***** long write success ***** \n");
-            }
-        }
-    }else{
-        ESP_LOGI(EXAMPLE_TAG,"ESP_GATT_PREP_WRITE_CANCEL");
-    }
-    if (prepare_write_env->prepare_buf) {
-        free(prepare_write_env->prepare_buf);
-        prepare_write_env->prepare_buf = NULL;
-    }
-    prepare_write_env->prepare_len = 0;
-}
-
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     switch (event) {
@@ -583,36 +554,30 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             }
         }
        	    break;
-        case ESP_GATTS_READ_EVT:
-            //ESP_LOGE(EXAMPLE_TAG, "ESP_GATTS_READ_EVT, handle=0x%d, offset=%d", param->read.handle, param->read.offset);
-            if(gatt_db_handle_table[IDX_CHAR_VAL_A] == param->read.handle) {
-                ESP_LOGE(EXAMPLE_TAG, "(2) ***** read char1 ***** \n");
-            }
-       	    break;
         case ESP_GATTS_WRITE_EVT:
             if (!param->write.is_prep){
                 // the data length of gattc write  must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX.
-                if(gatt_db_handle_table[IDX_CHAR_VAL_A] == param->write.handle && param->write.len == 2) {
-                    uint8_t write_data[2] = {0x88, 0x99};
-                    if(memcmp(write_data, param->write.value, param->write.len) == 0) {
-                        ESP_LOGI(EXAMPLE_TAG, "(3)***** short write success ***** \n");
-                    }
+                ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_WRITE_EVT: handle: %d",param->write.handle);
+                if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_A] == param->write.handle)
+                {
+                    uint8_t time_treatment = param->write.value[0];
+                    timer_treatmnet_change_period(time_treatment);
                 }
-
+                else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_B] == param->write.handle)
+                {
+                    ESP_LOGI(EXAMPLE_TAG, "%d",param->write.value[0]);
+                }
+                else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_C] == param->write.handle)
+                {
+                    if(param->write.value[0] == 0x01)ESP_LOGI(EXAMPLE_TAG,"Start treatment");
+                    else if(param->write.value[0] == 0x00)ESP_LOGI(EXAMPLE_TAG,"Stop treatment");
+                }
                 /* send response when param->write.need_rsp is true*/
                 if (param->write.need_rsp){
                     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
                 }
-            }else{
-                /* handle prepare write */
-                example_prepare_write_event_env(gatts_if, &prepare_write_env, param);
             }
       	    break;
-        case ESP_GATTS_EXEC_WRITE_EVT:
-            // the length of gattc prepare write data must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX.
-            ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT, Length=%d",  prepare_write_env.prepare_len);
-            example_exec_write_event_env(&prepare_write_env, param);
-            break;
         case ESP_GATTS_CONF_EVT:
             EXAMPLE_DEBUG(EXAMPLE_TAG, "ESP_GATTS_CONF_EVT, status = %d", param->conf.status);
             break;
@@ -636,8 +601,17 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             }
             else {
                 ESP_LOGI(EXAMPLE_TAG, "create attribute table successfully, the number handle = %d\n",param->add_attr_tab.num_handle);
-                memcpy(gatt_db_handle_table, param->add_attr_tab.handles, sizeof(gatt_db_handle_table));
-                esp_ble_gatts_start_service(gatt_db_handle_table[IDX_SVC]);
+                if(param->add_attr_tab.svc_inst_id == SVC_DEVICE_CONFIG_INST_ID)
+                {
+                    memcpy(gatt_svc_device_config_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_device_config_handle_table));
+                    esp_ble_gatts_start_service(gatt_svc_device_config_handle_table[IDX_SVC]);
+                }
+                else
+                {
+                    memcpy(gatt_db_handle_table, param->add_attr_tab.handles, sizeof(gatt_db_handle_table));
+                    esp_ble_gatts_start_service(gatt_db_handle_table[IDX_SVC]);
+                }
+                
             }
             break;
         }

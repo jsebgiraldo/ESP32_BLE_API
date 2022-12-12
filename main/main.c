@@ -134,16 +134,16 @@ void app_main(void)
 	dac_modulation_wave_setup();
 	external_wave_setup();
 
-	hv_converter_init();
-	battery_level_init();
+	//hv_converter_init();
+	//battery_level_init();
  
     //Start test task
     //xTaskCreate(get_bpm, "Get BPM", 8192, NULL, 1, NULL);
 
     user_ble_start();
 
-	deep_sleep_setup_timer();
-	deep_sleep_timer_start();
+	//deep_sleep_setup_timer();
+	//deep_sleep_timer_start();
 	//***********************************************//
 	
 }

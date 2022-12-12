@@ -519,8 +519,9 @@ static esp_err_t http_start_treatment(httpd_req_t *req)
 	dac_modulation_wave_start();
 
 	pwm_carrier_wave_configure(&pwm_config);
-	external_wave_config(&external_wave);
 	pwm_carrier_wave_start();
+
+	external_wave_config(&external_wave);
 	external_wave_start();
 
 	timer_treatmnet_start();
