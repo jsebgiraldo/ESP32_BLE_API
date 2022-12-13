@@ -30,10 +30,11 @@
 #include "user_carrier_wave.h"
 #include "user_external_wave.h"
 #include "user_modulation_wave.h"
+#include "user_timer.h"
 
 modulation_wave_config_t wave_config;
 
-mcpwm_config_t pwm_config = {
+mcpwm_config_t carrier_wave = {
     .counter_mode = MCPWM_UP_COUNTER,
     .duty_mode = MCPWM_DUTY_MODE_0,
 };
@@ -44,17 +45,26 @@ mcpwm_config_t external_wave = {
     .duty_mode = MCPWM_DUTY_MODE_0,
 };
 
-
+uint16_t connection_idx;
 
 #define DEBUG_ON  0
 
 #if DEBUG_ON
-#define EXAMPLE_DEBUG ESP_LOGI
+#define EXAMPLE_DEBUG BLE_DEBUG
 #else
 #define EXAMPLE_DEBUG( tag, format, ... )
 #endif
 
-#define EXAMPLE_TAG "BLE_COMP"
+static const char TAG[] = "[BLE]";
+
+#define BLE_ENABLE
+#ifdef BLE_ENABLE
+// Tag used for ESP serial console messages
+	#define BLE_DEBUG(...) ESP_LOGI(TAG,LOG_COLOR(LOG_COLOR_PURPLE) __VA_ARGS__)
+#else
+	#define BLE_DEBUG(...)
+#endif
+
 
 #define PROFILE_NUM                 1
 #define PROFILE_APP_IDX             0
@@ -78,8 +88,12 @@ mcpwm_config_t external_wave = {
 
 static uint8_t adv_config_done       = 0;
 
-uint16_t gatt_db_handle_table[HRS_IDX_NB];
+uint16_t gatt_svc_device_battery_handle_table[HRS_IDX_NB];
+uint16_t gatt_svc_heart_rate_handle_table[HRS_IDX_NB];
 uint16_t gatt_svc_device_config_handle_table[HRS_IDX_NB];
+uint16_t gatt_svc_carrier_wave_handle_table[HRS_IDX_NB];
+uint16_t gatt_svc_external_wave_handle_table[HRS_IDX_NB];
+uint16_t gatt_svc_intensity_modulation_handle_table[HRS_IDX_NB];
 
 static uint8_t service_uuid[16] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
@@ -128,6 +142,7 @@ struct gatts_profile_inst {
     esp_bt_uuid_t descr_uuid;
 };
 
+
 static uint32_t bytes_array_to_int(uint8_t *buffer, uint16_t len)
 {
     uint32_t var_int = buffer[0];
@@ -137,6 +152,7 @@ static uint32_t bytes_array_to_int(uint8_t *buffer, uint16_t len)
     }
     return var_int;
 }
+
 
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
 					esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
@@ -332,7 +348,7 @@ static const esp_gatts_attr_db_t gatt_svc3_db[HRS_IDX_NB] =
     /* Characteristic Value */
     [IDX_CHAR_VAL_A] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_CARRIER_FREQUENCY, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+      sizeof(uint32_t), sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic User Descriptor */
     [IDX_CHAR_CFG_A]  =
@@ -371,7 +387,7 @@ static const esp_gatts_attr_db_t gatt_svc4_db[HRS_IDX_NB] =
     /* Characteristic Value */
     [IDX_CHAR_VAL_A] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_EXTERNAL_FREQUENCY, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+      sizeof(uint32_t), sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic User Descriptor */
     [IDX_CHAR_CFG_A]  =
@@ -412,7 +428,7 @@ static const esp_gatts_attr_db_t gatt_svc5_db[HRS_IDX_NB] =
     /* Characteristic Value */
     [IDX_CHAR_VAL_A] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_T1, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+      sizeof(uint32_t), sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic User Descriptor */
     [IDX_CHAR_CFG_A]  =
@@ -427,7 +443,7 @@ static const esp_gatts_attr_db_t gatt_svc5_db[HRS_IDX_NB] =
     /* Characteristic Value */
     [IDX_CHAR_VAL_B] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_T2, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+      sizeof(uint32_t), sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic User Descriptor */
     [IDX_CHAR_CFG_B]  =
@@ -442,7 +458,7 @@ static const esp_gatts_attr_db_t gatt_svc5_db[HRS_IDX_NB] =
     /* Characteristic Value */
     [IDX_CHAR_VAL_C] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&CHAR_T3, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-      SHORT_CHAR_VAL_LEN, sizeof(char_value), (uint8_t *)char_value}},
+      sizeof(uint32_t), sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic User Descriptor */
     [IDX_CHAR_CFG_C]  =
@@ -455,20 +471,7 @@ static const esp_gatts_attr_db_t gatt_svc5_db[HRS_IDX_NB] =
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
-    #ifdef CONFIG_SET_RAW_ADV_DATA
-        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-            adv_config_done &= (~ADV_CONFIG_FLAG);
-            if (adv_config_done == 0){
-                esp_ble_gap_start_advertising(&adv_params);
-            }
-            break;
-        case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
-            adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
-            if (adv_config_done == 0){
-                esp_ble_gap_start_advertising(&adv_params);
-            }
-            break;
-    #else
+
         case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
             adv_config_done &= (~ADV_CONFIG_FLAG);
             if (adv_config_done == 0){
@@ -481,25 +484,24 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 esp_ble_gap_start_advertising(&adv_params);
             }
             break;
-    #endif
         case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
             /* advertising start complete event to indicate advertising start successfully or failed */
             if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-                ESP_LOGE(EXAMPLE_TAG, "advertising start failed");
+                BLE_DEBUG( "advertising start failed");
             }else{
-                ESP_LOGI(EXAMPLE_TAG, "(0) ***** advertising start successfully ***** \n");
+                BLE_DEBUG( "(0) ***** advertising start successfully ***** ");
             }
             break;
         case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
             if (param->adv_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-                ESP_LOGE(EXAMPLE_TAG, "Advertising stop failed");
+                BLE_DEBUG( "Advertising stop failed");
             }
             else {
-                ESP_LOGI(EXAMPLE_TAG, "Stop adv successfully\n");
+                BLE_DEBUG( "Stop adv successfully");
             }
             break;
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-            EXAMPLE_DEBUG(EXAMPLE_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+            EXAMPLE_DEBUG( "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
                   param->update_conn_params.status,
                   param->update_conn_params.min_int,
                   param->update_conn_params.max_int,
@@ -519,97 +521,209 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 
             esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
             if (set_dev_name_ret){
-                ESP_LOGE(EXAMPLE_TAG, "set device name failed, error code = %x", set_dev_name_ret);
+                BLE_DEBUG( "set device name failed, error code = %x", set_dev_name_ret);
             }
             //config adv data
             esp_err_t ret = esp_ble_gap_config_adv_data(&adv_data);
             if (ret){
-                ESP_LOGE(EXAMPLE_TAG, "config adv data failed, error code = %x", ret);
+                BLE_DEBUG( "config adv data failed, error code = %x", ret);
             }
             adv_config_done |= ADV_CONFIG_FLAG;
 
             esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, HRS_IDX_NB, SVC_DEVICE_BATTERY_INST_ID);
             if (create_attr_ret){
-                ESP_LOGE(EXAMPLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
+                BLE_DEBUG( "create attr table failed, error code = %x", create_attr_ret);
             }
             create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_svc1_db, gatts_if, HRS_IDX_NB, SVC_HEART_RATE_INST_ID);
             if (create_attr_ret){
-                ESP_LOGE(EXAMPLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
+                BLE_DEBUG( "create attr table failed, error code = %x", create_attr_ret);
             }
             create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_svc2_db, gatts_if, HRS_IDX_NB, SVC_DEVICE_CONFIG_INST_ID);
             if (create_attr_ret){
-                ESP_LOGE(EXAMPLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
+                BLE_DEBUG( "create attr table failed, error code = %x", create_attr_ret);
             }
             create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_svc3_db, gatts_if, HRS_IDX_NB, SVC_CARRIER_WAVE_INST_ID);
             if (create_attr_ret){
-                ESP_LOGE(EXAMPLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
+                BLE_DEBUG( "create attr table failed, error code = %x", create_attr_ret);
             }
             create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_svc4_db, gatts_if, HRS_IDX_NB, SVC_EXTERNAL_WAVE_INST_ID);
             if (create_attr_ret){
-                ESP_LOGE(EXAMPLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
+                BLE_DEBUG( "create attr table failed, error code = %x", create_attr_ret);
             }
             create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_svc5_db, gatts_if, HRS_IDX_NB, SVC_INTENSITY_MODULATION_ID);
             if (create_attr_ret){
-                ESP_LOGE(EXAMPLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
+                BLE_DEBUG( "create attr table failed, error code = %x", create_attr_ret);
             }
         }
        	    break;
         case ESP_GATTS_WRITE_EVT:
             if (!param->write.is_prep){
                 // the data length of gattc write  must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX.
-                ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_WRITE_EVT: handle: %d",param->write.handle);
-                if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_A] == param->write.handle)
+                BLE_DEBUG( "ESP_GATTS_WRITE_EVT: handle: %d",param->write.handle);
+
+
+                // Device config svc
+                if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Treatment time
                 {
                     uint8_t time_treatment = param->write.value[0];
                     timer_treatmnet_change_period(time_treatment);
                 }
-                else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_B] == param->write.handle)
+                else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // Max intensity
                 {
-                    ESP_LOGI(EXAMPLE_TAG, "%d",param->write.value[0]);
+                    wave_config.max_intensity = param->write.value[0]*2.55;
+			        wave_config.hv_intensity = param->write.value[0]*1.06;
                 }
-                else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_C] == param->write.handle)
+                else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_C] == param->write.handle) // Start treatment
                 {
-                    if(param->write.value[0] == 0x01)ESP_LOGI(EXAMPLE_TAG,"Start treatment");
-                    else if(param->write.value[0] == 0x00)ESP_LOGI(EXAMPLE_TAG,"Stop treatment");
+                    if(param->write.value[0] == 0x01)
+                    {
+                        BLE_DEBUG("-------- START TREATMENT --------");
+
+                        BLE_DEBUG("max intensity: %d",wave_config.max_intensity);
+                        
+                        BLE_DEBUG("hv intensity: %d",wave_config.hv_intensity);
+                        
+                        BLE_DEBUG("Carrier wave frequency: %d",carrier_wave.frequency);
+                        BLE_DEBUG("Carrier wave compr a: %f",carrier_wave.cmpr_a);
+                        BLE_DEBUG("Carrier wave compr b: %f",carrier_wave.cmpr_b);
+                        
+                        BLE_DEBUG("External wave frequency: %d",external_wave.frequency);
+                        BLE_DEBUG("External wave compr b: %f",external_wave.cmpr_b);
+
+                        BLE_DEBUG("Wave config T1: %d",wave_config.T1);
+                        BLE_DEBUG("Wave config T2: %d",wave_config.T2);
+                        BLE_DEBUG("Wave config T3: %d",wave_config.T3);
+
+                        BLE_DEBUG("\r\n");
+                        
+                        dac_modulation_wave_configure(&wave_config);
+                        dac_modulation_wave_start();
+
+                        pwm_carrier_wave_configure(&carrier_wave);
+                        pwm_carrier_wave_start();
+
+                        external_wave_config(&external_wave);
+                        external_wave_start();
+
+                        timer_treatmnet_start();
+                        deep_sleep_timer_stop();
+
+                    }
+                    else if(param->write.value[0] == 0x00)
+                    {
+                        BLE_DEBUG("Stop treatment");
+
+                        pwm_carrier_wave_stop();
+	                    dac_modulation_wave_stop();
+	                    external_wave_stop();
+                    }
+                    
                 }
+
+                // Carrier Wave config
+                else if(gatt_svc_carrier_wave_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Frequency
+                {
+                    carrier_wave.frequency = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if(gatt_svc_carrier_wave_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // ppw
+                {
+                    if(param->write.value[0] < 100)
+                    {
+                        carrier_wave.cmpr_a = param->write.value[0];
+                        carrier_wave.cmpr_b = 100 - param->write.value[0];
+                    }
+  
+                }
+
+                // External Wave config
+                else if(gatt_svc_external_wave_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Frequency
+                {
+                    external_wave.frequency = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if(gatt_svc_external_wave_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // ppw-s
+                {
+                    if(param->write.value[0] < 100)
+                    {
+                        external_wave.cmpr_b = param->write.value[0];
+                    }
+  
+                }
+
+                // Intensity Modulation
+                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // T1
+                {
+                    wave_config.T1 = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // T2
+                {
+                    wave_config.T2 = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_C] == param->write.handle) // T3
+                {
+                    wave_config.T3 = bytes_array_to_int(param->write.value,param->write.len);
+                }
+
                 /* send response when param->write.need_rsp is true*/
                 if (param->write.need_rsp){
                     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
                 }
+
             }
       	    break;
         case ESP_GATTS_CONF_EVT:
-            EXAMPLE_DEBUG(EXAMPLE_TAG, "ESP_GATTS_CONF_EVT, status = %d", param->conf.status);
+            EXAMPLE_DEBUG( "ESP_GATTS_CONF_EVT, status = %d", param->conf.status);
             break;
         case ESP_GATTS_START_EVT:
-            EXAMPLE_DEBUG(EXAMPLE_TAG, "SERVICE_START_EVT, status %d, service_handle %d", param->start.status, param->start.service_handle);
+            EXAMPLE_DEBUG( "SERVICE_START_EVT, status %d, service_handle %d", param->start.status, param->start.service_handle);
             break;
         case ESP_GATTS_CONNECT_EVT:
-            ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
+            BLE_DEBUG( "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
+            connection_idx = param->connect.conn_id;
             break;
         case ESP_GATTS_DISCONNECT_EVT:
-            ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
+            BLE_DEBUG( "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
             esp_ble_gap_start_advertising(&adv_params);
             break;
         case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
             if (param->add_attr_tab.status != ESP_GATT_OK){
-                ESP_LOGE(EXAMPLE_TAG, "create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+                BLE_DEBUG( "create attribute table failed, error code=0x%x", param->add_attr_tab.status);
             }
             else if (param->add_attr_tab.num_handle != HRS_IDX_NB){
-                ESP_LOGE(EXAMPLE_TAG, "create attribute table abnormally, num_handle (%d) \
+                BLE_DEBUG( "create attribute table abnormally, num_handle (%d) \
                         doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, HRS_IDX_NB);
             }
             else {
-                ESP_LOGI(EXAMPLE_TAG, "create attribute table successfully, the number handle = %d\n",param->add_attr_tab.num_handle);
+                BLE_DEBUG( "create attribute table successfully, the number handle = %d",param->add_attr_tab.num_handle);
                 if(param->add_attr_tab.svc_inst_id == SVC_DEVICE_CONFIG_INST_ID)
                 {
                     memcpy(gatt_svc_device_config_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_device_config_handle_table));
                     esp_ble_gatts_start_service(gatt_svc_device_config_handle_table[IDX_SVC]);
                 }
-                else
+                else if(param->add_attr_tab.svc_inst_id == SVC_CARRIER_WAVE_INST_ID)
                 {
-                    memcpy(gatt_db_handle_table, param->add_attr_tab.handles, sizeof(gatt_db_handle_table));
-                    esp_ble_gatts_start_service(gatt_db_handle_table[IDX_SVC]);
+                    memcpy(gatt_svc_carrier_wave_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_carrier_wave_handle_table));
+                    esp_ble_gatts_start_service(gatt_svc_carrier_wave_handle_table[IDX_SVC]);
+                }
+                else if(param->add_attr_tab.svc_inst_id == SVC_EXTERNAL_WAVE_INST_ID)
+                {
+                    
+                    memcpy(gatt_svc_external_wave_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_external_wave_handle_table));
+                    esp_ble_gatts_start_service(gatt_svc_external_wave_handle_table[IDX_SVC]);
+                }
+                else if(param->add_attr_tab.svc_inst_id == SVC_INTENSITY_MODULATION_ID)
+                {
+                    memcpy(gatt_svc_intensity_modulation_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_intensity_modulation_handle_table));
+                    esp_ble_gatts_start_service(gatt_svc_intensity_modulation_handle_table[IDX_SVC]);
+                }
+                else if(param->add_attr_tab.svc_inst_id == SVC_DEVICE_BATTERY_INST_ID)
+                {
+                    memcpy(gatt_svc_device_battery_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_device_battery_handle_table));
+                    esp_ble_gatts_start_service(gatt_svc_device_battery_handle_table[IDX_SVC]);
+                }
+                else if(param->add_attr_tab.svc_inst_id == SVC_HEART_RATE_INST_ID)
+                {
+                    memcpy(gatt_svc_heart_rate_handle_table, param->add_attr_tab.handles, sizeof(gatt_svc_heart_rate_handle_table));
+                    esp_ble_gatts_start_service(gatt_svc_heart_rate_handle_table[IDX_SVC]);
                 }
                 
             }
@@ -629,7 +743,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         if (param->reg.status == ESP_GATT_OK) {
             gl_profile_tab[PROFILE_APP_IDX].gatts_if = gatts_if;
         } else {
-            ESP_LOGE(EXAMPLE_TAG, "reg app failed, app_id %04x, status %d",
+            BLE_DEBUG( "reg app failed, app_id %04x, status %d",
                     param->reg.app_id,
                     param->reg.status);
             return;
@@ -656,43 +770,64 @@ void user_ble_start(void)
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
-        ESP_LOGE(EXAMPLE_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
+        BLE_DEBUG( "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
-        ESP_LOGE(EXAMPLE_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
+        BLE_DEBUG( "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bluedroid_init();
     if (ret) {
-        ESP_LOGE(EXAMPLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
+        BLE_DEBUG( "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_bluedroid_enable();
     if (ret) {
-        ESP_LOGE(EXAMPLE_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
+        BLE_DEBUG( "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
     ret = esp_ble_gatts_register_callback(gatts_event_handler);
     if (ret){
-        ESP_LOGE(EXAMPLE_TAG, "gatts register error, error code = %x", ret);
+        BLE_DEBUG( "gatts register error, error code = %x", ret);
         return;
     }
 
     ret = esp_ble_gap_register_callback(gap_event_handler);
     if (ret){
-        ESP_LOGE(EXAMPLE_TAG, "gap register error, error code = %x", ret);
+        BLE_DEBUG( "gap register error, error code = %x", ret);
         return;
     }
 
     ret = esp_ble_gatts_app_register(ESP_APP_ID);
     if (ret){
-        ESP_LOGE(EXAMPLE_TAG, "gatts app register error, error code = %x", ret);
+        BLE_DEBUG( "gatts app register error, error code = %x", ret);
         return;
     }
+}
+
+
+void user_ble_notify_battery_level(uint8_t *value)
+{
+    esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_APP_IDX].gatts_if,
+                                connection_idx,
+                                gatt_svc_device_battery_handle_table[IDX_CHAR_VAL_A],
+                                sizeof(uint8_t),
+                                value,
+                                false);
+}
+
+void user_ble_notify_heart_rate(uint8_t *value)
+{
+    esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_APP_IDX].gatts_if,
+                                connection_idx,
+                                gatt_svc_heart_rate_handle_table[IDX_CHAR_VAL_A],
+                                sizeof(uint8_t),
+                                value,
+                                false);
 }

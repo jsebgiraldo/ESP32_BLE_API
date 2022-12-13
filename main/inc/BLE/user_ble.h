@@ -41,3 +41,6 @@ enum
 };
 
 void user_ble_start(void);
+
+void user_ble_notify_battery_level(uint8_t *value);
+void user_ble_notify_heart_rate(uint8_t *value);

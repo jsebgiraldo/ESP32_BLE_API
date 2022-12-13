@@ -69,12 +69,12 @@ esp_err_t i2c_master_init(i2c_port_t i2c_port){
 }
 
 void get_bpm(void* param) {
-    printf("MAX30102\n");
-
+    MAIN_DEBUG("MAX30102 Init");
+    esp_err_t ret;
      //Init I2C_NUM_0
     ESP_ERROR_CHECK(i2c_master_init(I2C_PORT));
     //Init sensor at I2C_NUM_0
-    ESP_ERROR_CHECK(max30102_init( &max30102, I2C_PORT,
+    ret = max30102_init( &max30102, I2C_PORT,
                    MAX30102_DEFAULT_OPERATING_MODE,
                    MAX30102_DEFAULT_SAMPLING_RATE,
                    MAX30102_DEFAULT_LED_PULSE_WIDTH,
@@ -86,7 +86,14 @@ void get_bpm(void* param) {
                    MAX30102_DEFAULT_SAMPLE_AVERAGING,
                    MAX30102_DEFAULT_ROLL_OVER,
                    MAX30102_DEFAULT_ALMOST_FULL,
-                   false ));
+                   false );
+
+    if(ret != ESP_OK)
+    {
+        MAIN_DEBUG("Failed to initialize");
+        vTaskDelete(NULL);
+        return;
+    }
 
     max30102_data_t result = {};
     /*ESP_ERROR_CHECK(max30102_print_registers(&max30102));*/
@@ -96,6 +103,8 @@ void get_bpm(void* param) {
         if(result.pulse_detected) {
             printf("BEAT\n");
             printf("BPM: %f | SpO2: %f%%\n", result.heart_bpm, result.spO2);
+            uint8_t heart_rate[] = {result.heart_bpm};
+            user_ble_notify_heart_rate(heart_rate);
         }
         //Update rate: 100Hz
         vTaskDelay(10/portTICK_PERIOD_MS);
@@ -134,16 +143,16 @@ void app_main(void)
 	dac_modulation_wave_setup();
 	external_wave_setup();
 
-	//hv_converter_init();
-	//battery_level_init();
+	hv_converter_init();
+	battery_level_init();
  
     //Start test task
-    //xTaskCreate(get_bpm, "Get BPM", 8192, NULL, 1, NULL);
+    xTaskCreate(get_bpm, "Get BPM", 8192, NULL, 1, NULL);
 
     user_ble_start();
 
-	//deep_sleep_setup_timer();
-	//deep_sleep_timer_start();
+	deep_sleep_setup_timer();
+	deep_sleep_timer_start();
 	//***********************************************//
 	
 }

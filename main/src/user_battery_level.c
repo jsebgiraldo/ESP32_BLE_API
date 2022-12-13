@@ -1,6 +1,8 @@
 
 #include "user_battery_level.h"
 
+#include "user_ble.h"
+
 #include "esp_log.h"
 
 #include "freertos/FreeRTOS.h"
@@ -69,7 +71,8 @@ void adc_battery(void *pvParameters)
 	print_char_val_type(val_type);
 	for(;;)
 	{
-    	get_battery_level();
+        uint8_t battery_level[] = {get_battery_level()};
+        user_ble_notify_battery_level(battery_level);
         vTaskDelay(pdMS_TO_TICKS(1000));
 
 	}
