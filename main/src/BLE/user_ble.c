@@ -565,16 +565,66 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                 // Device config svc
                 if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Treatment time
                 {
+                    BLE_DEBUG( "Treatment Time: handle: %d, param: %s",param->write.handle, param->write.value);
                     uint8_t time_treatment = param->write.value[0];
                     timer_treatmnet_change_period(time_treatment);
                 }
                 else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // Max intensity
                 {
+                    BLE_DEBUG( "Max intensity: handle: %d, param: %s",param->write.handle, param->write.value);
                     wave_config.max_intensity = param->write.value[0]*2.55;
 			        wave_config.hv_intensity = param->write.value[0]*1.06;
                 }
+                // Carrier Wave config
+                else if(gatt_svc_carrier_wave_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Frequency
+                {
+                    BLE_DEBUG( "Frequency: handle: %d, param: %s",param->write.handle, param->write.value);
+                    carrier_wave.frequency = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if(gatt_svc_carrier_wave_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // ppw
+                {
+                    BLE_DEBUG( "ppw: handle: %d, param: %s",param->write.handle, param->write.value);
+                    if(param->write.value[0] < 100)
+                    {
+                        carrier_wave.cmpr_a = param->write.value[0];
+                        carrier_wave.cmpr_b = 100 - param->write.value[0];
+                    }
+  
+                }
+                // External Wave config
+                else if(gatt_svc_external_wave_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Frequency
+                {
+                    BLE_DEBUG( "Frequency: handle: %d, param: %s",param->write.handle, param->write.value);
+                    external_wave.frequency = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if(gatt_svc_external_wave_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // ppw-s
+                {
+                    BLE_DEBUG( "ppw-s: handle: %d, param: %s",param->write.handle, param->write.value);
+                    if(param->write.value[0] < 100)
+                    {
+                        external_wave.cmpr_b = param->write.value[0];
+                    }
+  
+                }
+                // Intensity Modulation
+                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // T1
+                {
+                    BLE_DEBUG( "T1: handle: %d, param: %s",param->write.handle, param->write.value);
+                    wave_config.T1 = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // T2
+                {
+                    BLE_DEBUG( "T2: handle: %d, param: %s",param->write.handle, param->write.value);
+                    wave_config.T2 = bytes_array_to_int(param->write.value,param->write.len);
+                }
+                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_C] == param->write.handle) // T3
+                {
+                    BLE_DEBUG( "T3: handle: %d, param: %s",param->write.handle, param->write.value);
+                    wave_config.T3 = bytes_array_to_int(param->write.value,param->write.len);
+                }
                 else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_C] == param->write.handle) // Start treatment
                 {
+                    BLE_DEBUG( "Start treatment: handle: %d, param: %s",param->write.handle, param->write.value);
                     if(param->write.value[0] == 0x01)
                     {
                         BLE_DEBUG("-------- START TREATMENT --------");
@@ -620,49 +670,6 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                     
                 }
 
-                // Carrier Wave config
-                else if(gatt_svc_carrier_wave_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Frequency
-                {
-                    carrier_wave.frequency = bytes_array_to_int(param->write.value,param->write.len);
-                }
-                else if(gatt_svc_carrier_wave_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // ppw
-                {
-                    if(param->write.value[0] < 100)
-                    {
-                        carrier_wave.cmpr_a = param->write.value[0];
-                        carrier_wave.cmpr_b = 100 - param->write.value[0];
-                    }
-  
-                }
-
-                // External Wave config
-                else if(gatt_svc_external_wave_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // Frequency
-                {
-                    external_wave.frequency = bytes_array_to_int(param->write.value,param->write.len);
-                }
-                else if(gatt_svc_external_wave_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // ppw-s
-                {
-                    if(param->write.value[0] < 100)
-                    {
-                        external_wave.cmpr_b = param->write.value[0];
-                    }
-  
-                }
-
-                // Intensity Modulation
-                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_A] == param->write.handle) // T1
-                {
-                    wave_config.T1 = bytes_array_to_int(param->write.value,param->write.len);
-                }
-                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_B] == param->write.handle) // T2
-                {
-                    wave_config.T2 = bytes_array_to_int(param->write.value,param->write.len);
-                }
-                else if (gatt_svc_intensity_modulation_handle_table[IDX_CHAR_VAL_C] == param->write.handle) // T3
-                {
-                    wave_config.T3 = bytes_array_to_int(param->write.value,param->write.len);
-                }
-
                 /* send response when param->write.need_rsp is true*/
                 if (param->write.need_rsp){
                     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
@@ -679,10 +686,12 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         case ESP_GATTS_CONNECT_EVT:
             BLE_DEBUG( "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
             connection_idx = param->connect.conn_id;
+            deep_sleep_timer_stop();
             break;
         case ESP_GATTS_DISCONNECT_EVT:
             BLE_DEBUG( "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
             esp_ble_gap_start_advertising(&adv_params);
+            deep_sleep_timer_start();
             break;
         case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
             if (param->add_attr_tab.status != ESP_GATT_OK){
