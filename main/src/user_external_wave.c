@@ -31,6 +31,12 @@ static bool external_wave_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_
 }
 
 void external_wave_start(void) {
+
+    if(wave_config.cmpr_a == 0 || wave_config.cmpr_b == 0)
+    {
+        return;
+    }
+
     if(wave_config.frequency <= 1000)
     {
         EXWAVE_DEBUG("%s",__func__);

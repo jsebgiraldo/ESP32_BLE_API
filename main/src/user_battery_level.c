@@ -96,7 +96,7 @@ uint8_t get_battery_level(void)
     adc_reading /= NO_OF_SAMPLES;
     //Convert adc_reading to voltage in mV
     uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
-    BATTERY_DEBUG("Raw: %d\tVoltage: %dmV", adc_reading, voltage);
+    //BATTERY_DEBUG("Raw: %d\tVoltage: %dmV", adc_reading, voltage);
 
     int16_t battery_level = 0.133*voltage - 180;
 

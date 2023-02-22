@@ -26,6 +26,12 @@ void pwm_carrier_wave_configure(mcpwm_config_t *config)
 {
     memcpy(&pwm_config,config,sizeof(mcpwm_config_t));
     CARRIER_DEBUG("Carrier Frequency: %d , duty_a: %f, duty_b: %f",pwm_config.frequency,pwm_config.cmpr_a,pwm_config.cmpr_b);
+   
+    if(pwm_config.cmpr_a == 0 || pwm_config.cmpr_b == 0)
+    {
+        return;
+    }
+   
     if(pwm_config.frequency <= 1*1000*1000)
     {
         ESP_ERROR_CHECK(mcpwm_init(TARGET_MCPWM_UNIT, MCPWM_TIMER_0, &pwm_config));

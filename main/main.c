@@ -90,7 +90,7 @@ void get_bpm(void* param) {
 
     if(ret != ESP_OK)
     {
-        MAIN_DEBUG("Failed to initialize");
+        MAIN_DEBUG("[MAX30102] Failed to initialize");
         vTaskDelete(NULL);
         return;
     }
