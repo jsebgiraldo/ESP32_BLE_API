@@ -631,7 +631,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                 else if (gatt_svc_device_config_handle_table[IDX_CHAR_VAL_C] == param->write.handle) // Start treatment
                 {
                     BLE_DEBUG( "Start treatment: handle: %d, param: %s",param->write.handle, param->write.value);
-                    if(param->write.value[0] == 0x01)
+                    if(atoi((char *)param->write.value) == 0x01)
                     {
                         BLE_DEBUG("-------- START TREATMENT --------");
 
@@ -665,7 +665,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         deep_sleep_timer_stop();
 
                     }
-                    else if(param->write.value[0] == 0x00)
+                    else if(atoi((char *)param->write.value) == 0x00)
                     {
                         BLE_DEBUG("------ STOP TREATMENT -------");
 
@@ -846,3 +846,5 @@ void user_ble_notify_heart_rate(uint8_t *value)
                                 value,
                                 false);
 }
+
+  
